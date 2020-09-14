@@ -1,7 +1,8 @@
 import itertools
+import os
 import pickle
 from collections import defaultdict
-from mediator_width import *
+
 import matplotlib.colors as mcolors
 import mplhep as hep
 import numpy as np
@@ -10,8 +11,11 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import CloughTocher2DInterpolator, Rbf, interp1d
 from scipy.optimize import minimize
 
-from limitlib import interpolate_rbf, brazilgreen, brazilyellow, find_intersection
+from limitlib import (brazilgreen, brazilyellow, find_intersection,
+                      interpolate_rbf)
+from mediator_width import *
 
+pjoin = os.path.join
 plt.style.use(hep.style.CMS)
 
 cmap = mcolors.LinearSegmentedColormap.from_list("n", list(reversed([
@@ -47,7 +51,7 @@ def plot_1d(df):
         ax.set_ylim(ymin, ymax)
         plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
         for ext in ['png','pdf']:
-            fig.savefig(f"output/combination/{coupling}_1d.{ext}")
+            fig.savefig(pjoin(outdir, f"{coupling}_1d.{ext}"))
             
         plt.close(fig)
 
@@ -83,36 +87,63 @@ def fdm_analytic(mmed, mdm, coupling):
 
 
 
-def plot_2d(df):
+def plot_2d(df, tag):
+
+    outdir = pjoin("./output",tag)
+    try:
+        os.makedirs(outdir)
+    except FileExistsError:
+        pass
+
     for coupling in 'vector', 'axial':
         plt.gcf().clf()
 
         idf = df[df.coupling==coupling]
 
         idf1 = idf[idf.mdm==1]
-        fmed = interp1d(idf1.mmed, np.log(idf1.exp))
+        fmed = interp1d(idf1.mmed, np.log(idf1.exp), fill_value='extrapolate')
         # mmed = np.linspace(0,2500,100)
 
         idf2k = idf[idf.mmed==2000]
         fdm = interp1d(idf2k.mdm / 2000, np.log(idf2k.exp / idf2k.exp[idf2k.mdm==1]), fill_value='extrapolate')
         
+        # Plot of the limit dependence on the DM mass
         plt.gcf().clf()
         mdm = np.linspace(0,0.5,100)
-        plt.plot(idf2k.mdm / 2000, idf2k.exp / idf2k.exp[idf2k.mdm==1],marker='o',markersize=10, label='Reco-level result',ls='none', color='k')
-        plt.plot(mdm, np.exp(fdm(mdm)),lw=2,label='Log interpolation of reco',color='k',ls='--')
-        plt.plot(mdm, fdm_analytic(mmed=2000, mdm=mdm, coupling=coupling), lw=2,label='Analytic BR scaling', color='r')
-
+        plt.plot(
+                idf2k.mdm / 2000, 
+                idf2k.exp / idf2k.exp[idf2k.mdm==1],
+                marker='o',
+                markersize=10, 
+                label='Reco-level result',
+                ls='none', 
+                color='k'
+                )
+        plt.plot(
+                mdm, 
+                np.exp(fdm(mdm)),
+                lw=2,
+                label='Log interpolation of reco',
+                color='k',
+                ls='--'
+                )
+        plt.plot(
+                mdm, 
+                fdm_analytic(mmed=2000, mdm=mdm, coupling=coupling), 
+                lw=2,
+                label='Analytic BR scaling', 
+                color='r')
         plt.xlabel("$m_{DM}$ / $m_{med}$")
         plt.ylabel("$\mu(m_{DM})$ / $\mu(m_{DM}$ = 1 GeV)")
         plt.ylim(0,20 if coupling=='axial' else 5)
         plt.legend(title=f'{coupling.capitalize()} mediator')
-
         for ext in 'pdf','png':
-            plt.gcf().savefig(f"output/combination/{coupling}_fdm.{ext}")
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_fdm.{ext}"))
         plt.gcf().clf()
 
+        # 2D mass contour plot
         x, y, z = [], [], []
-        for mmed in np.linspace(100,2500,100):
+        for mmed in np.linspace(100,3000,100):
             for mdm in np.linspace(0,0.6,10):
                 if mdm < 0.5:
                     mu = np.exp(fmed(mmed)) * fdm_analytic(mmed=mmed, mdm=[mdm],coupling=coupling)[0]
@@ -156,14 +187,32 @@ def plot_2d(df):
             '$g_{q} = 0.25, g_{\chi} = 1.0$'
         ])
         )
+
+
+        relic_contours = load_relic(coupling)
+        for x,y in relic_contours:
+            plt.plot(x,y, color='gray',lw=2)
+
+        if coupling == 'axial':
+            plt.text(1500,1000,"$\Omega h^2$ = 0.12", color="gray", rotation=40)
+        else:
+            plt.text(2400,600,"$\Omega h^2$ = 0.12", color="gray", rotation=30)
         for ext in 'pdf','png':
-            plt.gcf().savefig(f"output/combination/{coupling}_contour.{ext}")
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour.{ext}"))
         plt.close(plt.gcf())
 
+def load_relic(coupling):
+    with open(f"input/relic/relic_{coupling[0].capitalize()}1.pkl", "rb") as f:
+        contours = pickle.load(f)
+    return contours
 
 def main():
-    df  = pd.read_pickle("input/limit_df.pkl")
+
+    infile = "input/2020-09-08/limit_df.pkl"
+    tag = infile.split("/")[-2]
+    # print(tag)
+    df  = pd.read_pickle(infile)
     # print(df.to_string())
-    plot_2d(df)
+    plot_2d(df,tag=tag)
 if __name__ == "__main__":
     main()
