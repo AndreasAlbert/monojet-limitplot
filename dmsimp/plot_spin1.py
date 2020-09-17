@@ -14,6 +14,7 @@ from scipy.optimize import minimize
 from limitlib import (brazilgreen, brazilyellow, find_intersection,
                       interpolate_rbf)
 from mediator_width import *
+from dmsimp_lib import *
 
 pjoin = os.path.join
 plt.style.use(hep.style.CMS)
@@ -55,6 +56,118 @@ def plot_1d(df):
             
         plt.close(fig)
 
+
+def binned_fill(x, low, high, **kwargs):
+    label = kwargs.pop("label")
+
+    first = True
+    width = 100
+    for ix, il, ih in zip(x,low, high):
+        plt.fill_between([ix-width,ix+width],[il,il],[ih,ih],label=label if first else None, **kwargs)
+        first = False
+
+
+
+
+
+def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
+
+    outdir = pjoin("./output/",tag)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    output_dfs = []
+    for coupling in 'vector', 'axial':
+        idf = df[(df.mdm==1)&(df.coupling==coupling)]
+        if correct_mdm:
+            corr_fac = fdm_analytic(idf.mmed, np.ones(len(idf.mmed))*1./3, coupling)
+            for percentile in ['exp','p1s','p2s','m1s','m2s']:
+                idf[percentile] = corr_fac * idf[percentile]
+
+                
+        fig = plt.gcf()
+        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        ax = plt.gca()
+        if coupling_type=='gq':
+            exp = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.exp)])
+            p1s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p1s)])
+            m1s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m1s)])
+            p2s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p2s)])
+            m2s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m2s)])
+        elif coupling_type=='gchi':
+            exp = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.exp)])
+            p1s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p1s)])
+            m1s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m1s)])
+            p2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p2s)])
+            m2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m2s)])
+
+        exp[exp==np.inf] = 1e9
+        p1s[p1s==np.inf] = 1e9
+        p2s[p2s==np.inf] = 1e9
+        m1s[m1s==np.inf] = 1e9
+        m2s[m2s==np.inf] = 1e9
+
+        tmp_df = pd.DataFrame(
+            {
+            'exp' :exp,
+            'p1s' : p1s,
+            'p2s' : p2s,
+            'm1s' : m1s,
+            'm2s' : m2s,
+            'mmed' : idf.mmed,
+            'mdm' : np.ones(len(idf.mmed)) if not correct_mdm else idf.mmed/3,
+            'coupling' : [coupling] * len(exp),
+            'coupling_type' : [coupling_type]* len(exp),
+            }
+        )
+        output_dfs.append(tmp_df)
+
+        ax.plot(
+                idf.mmed, 
+                exp,
+                marker='o',
+                fillstyle='none',
+                color='k',
+                ls="none",
+                label="Median expected",
+                markersize=10,
+                linewidth=2,
+                zorder=2,
+                )
+
+        binned_fill(idf.mmed, m1s, p1s,zorder=1,color=brazilgreen, label=r'68% expected')
+        binned_fill(idf.mmed, m2s, p2s,zorder=0,color=brazilyellow, label=r'95% expected')
+
+        # ax.fill_between(idf.mmed, m1s, p1s, color=brazilgreen,label=r'68% expected',zorder=1)
+        # ax.fill_between(idf.mmed, m2s, p2s, color=brazilyellow,label=r'95% expected',zorder=0)
+
+
+        if coupling_type=='gq':
+            ax.plot([0,2600],[0.25,0.25],lw=2,ls='-',color="crimson")
+            ax.text(200,0.25,'$g_{q}$ = 0.25', color='crimson', va='bottom')
+            ax.set_ylim(1e-2,0.5)
+            ax.set_ylabel("Upper limit on the coupling $g_{q}$")
+        elif coupling_type=='gchi':
+            ax.plot([0,2600],[1.0,1.0],lw=2,ls='-',color="crimson")
+            ax.text(200,1.0,'$g_{DM}$ = 1.0', color='crimson', va='bottom')
+            ax.set_ylim(1e-2,2)
+            ax.set_ylabel("Upper limit on the coupling $g_{DM}$")
+
+        ax.set_yscale("log")
+        ax.set_xlabel("$M_{med}$ (GeV)")
+        ax.set_xlim(0,2600)
+        ax.grid(ls='--')
+
+        if correct_mdm:
+            plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = $m_{{med}}$ / 3')
+        else:
+            plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
+        for ext in ['png','pdf']:
+            fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
+            
+        plt.close(fig)
+        
+    return output_dfs
 # def plot_coupling(df):
 #     for coupling in 'vector', 'axial':
 #         plt.gcf().clf()
@@ -72,7 +185,7 @@ def plot_1d(df):
 
 def fdm_analytic(mmed, mdm, coupling):
     ret = []
-    for mmed, mdm in zip(itertools.repeat(mmed), mdm):
+    for mmed, mdm in zip(mmed, mdm):
         if coupling=='vector':
             reference = gamma_vector_chi(mmed, m_x=0, g_chi=1.0) / gamma_vector_total(mmed, m_x=0, g_chi=1.0, g_q=0.25)
             new = gamma_vector_chi(mmed, m_x=mdm*mmed, g_chi=1.0) / gamma_vector_total(mmed, m_x=mdm*mmed, g_chi=1.0, g_q=0.25)
@@ -129,7 +242,7 @@ def plot_2d(df, tag):
                 )
         plt.plot(
                 mdm, 
-                fdm_analytic(mmed=2000, mdm=mdm, coupling=coupling), 
+                fdm_analytic(mmed=itertools.repeat(2000), mdm=mdm, coupling=coupling), 
                 lw=2,
                 label='Analytic BR scaling', 
                 color='r')
@@ -146,9 +259,9 @@ def plot_2d(df, tag):
         for mmed in np.linspace(100,3000,100):
             for mdm in np.linspace(0,0.6,10):
                 if mdm < 0.5:
-                    mu = np.exp(fmed(mmed)) * fdm_analytic(mmed=mmed, mdm=[mdm],coupling=coupling)[0]
+                    mu = np.exp(fmed(mmed)) * fdm_analytic(mmed=itertools.repeat(mmed), mdm=[mdm],coupling=coupling)[0]
                 else:
-                    mu = np.exp(fmed(mmed)) * fdm_analytic(mmed=mmed, mdm=[0.48],coupling=coupling)[0] * np.exp((mdm/0.48)**8)
+                    mu = np.exp(fmed(mmed)) * fdm_analytic(mmed=itertools.repeat(mmed), mdm=[0.48],coupling=coupling)[0] * np.exp((mdm/0.48)**8)
                 x.append(mmed)
                 y.append(mdm*mmed)
                 z.append(mu)
@@ -213,6 +326,18 @@ def main():
     # print(tag)
     df  = pd.read_pickle(infile)
     # print(df.to_string())
-    plot_2d(df,tag=tag)
+    # plot_2d(df,tag=tag)
+
+    dfs = []
+    for cp in ['gq','gchi']:
+        for correct in True, False:
+            dfs.extend(plot_coupling(df, tag=tag,coupling_type=cp, correct_mdm=correct))
+
+    dfout = pd.concat(dfs)
+    dfout.to_pickle(
+        pjoin('./output/',tag, 'coupling_limit_df.pkl')
+    )
+
+
 if __name__ == "__main__":
     main()
