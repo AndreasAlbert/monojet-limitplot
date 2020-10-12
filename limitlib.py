@@ -6,8 +6,8 @@ import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 import uproot
-from scipy.interpolate import CloughTocher2DInterpolator, Rbf
-
+from scipy.interpolate import CloughTocher2DInterpolator, Rbf, interp1d
+from scipy.optimize import minimize
 pjoin = os.path.join
 
 
