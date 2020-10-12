@@ -1,3 +1,4 @@
+import os
 import mplhep as hep
 import pickle
 from matplotlib import pyplot as plt
@@ -6,6 +7,7 @@ from scipy.optimize import minimize
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+pjoin = os.path.join
 plt.style.use(hep.style.CMS)
 def find_intersection(x, y, value):
     f = interp1d(x,y, fill_value="extrapolate")
@@ -21,11 +23,15 @@ brazilgreen = "green"
 brazilyellow = "orange"
 
 
-def add_d_limits(df):
+def add_d_limits(df, tag):
+    outdir = f'./output/{tag}/'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
     mdlimits = defaultdict(dict)
-    for d in set(df.d):
+    for d in map(int,set(df.d)):
         idf = df[df.d==d]
-        
+
         x = idf['md']
         for quantile in ['exp','obs','p1s','m1s','p2s','m2s']:
             y = idf[quantile]
@@ -50,11 +56,11 @@ def add_d_limits(df):
         ax.set_xlabel("$M_{D}$ (TeV)")
         ax.set_ylabel("95% CL upper limit on the signal strength $\mu$")
         ax.set_ylim(0,3)
-        plt.legend(title=f'ADD, d = {d}', loc='upper left')
+        plt.legend(title=f'ADD, d = {d:.0f}', loc='upper left')
         for ext in ['pdf','png']:
-            plt.gcf().savefig(f"output/d{d}.{ext}")
+            plt.gcf().savefig(pjoin(outdir, f"d{d}.{ext}"))
 
-    with open("mdlimits.pkl","wb") as f:
+    with open(pjoin(outdir,"mdlimits.pkl"),"wb") as f:
         pickle.dump(dict(mdlimits), f)
 
 def binned_fill(x, low, high, **kwargs):
@@ -68,10 +74,10 @@ def binned_fill(x, low, high, **kwargs):
 
 def limits_2016():
     x = [
-    2, 
-    3, 
-    4, 
-    5, 
+    2,
+    3,
+    4,
+    5,
     6]
     obs = [
     10.011816838995568,
@@ -89,8 +95,12 @@ def limits_2016():
 
     return x, exp, obs
 
-def add_md_limits():
-    with open("mdlimits.pkl","rb") as f:
+def add_md_limits(tag):
+    outdir = f'./output/{tag}/'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    with open(pjoin(outdir,"mdlimits.pkl"),"rb") as f:
         mdlimits = pickle.load(f)
 
     x = sorted(mdlimits.keys())
@@ -109,26 +119,30 @@ def add_md_limits():
     binned_fill(x, m1s, p1s,zorder=1,color=brazilgreen, label=r'68% expected')
     binned_fill(x, m2s, p2s,zorder=0,color=brazilyellow, label=r'95% expected')
 
-    
+
     ax = plt.gca()
     ax.set_xlabel("Number of extra dimensions")
     ax.set_ylabel("95% CL lower limit on $M_{D}$ (TeV)")
     ax.set_ylim(0,20)
     plt.legend()
     for ext in ['pdf','png']:
-        plt.gcf().savefig(f"output/md.{ext}")
+        plt.gcf().savefig(pjoin(outdir, f"md.{ext}"))
 
     x16, exp16, obs16 = limits_2016()
 
     plt.errorbar(x16, obs16, xerr=0.5, yerr=0, marker='o',color='blue', label="2016 observed", linewidth=2, markersize=10,ls="none")
     plt.legend()
     for ext in ['pdf','png']:
-        plt.gcf().savefig(f"output/md_with2016.{ext}")
+        plt.gcf().savefig(pjoin(outdir, f"md_with2016.{ext}"))
 
 def main():
-    df  = pd.read_pickle("limit_df.pkl")
-    add_d_limits(df)
-    add_md_limits()
+    inpath = "../dmsimp/input/2020-10-04_03Sep20v7/limit_df.pkl"
+    df  = pd.read_pickle(inpath)
+    df = df[df.cl==0.95]
+    df = df[~np.isnan(df.d)]
+    tag = inpath.split("/")[-2]
+    add_d_limits(df, tag)
+    add_md_limits(tag)
 
 if __name__ == "__main__":
     main()
