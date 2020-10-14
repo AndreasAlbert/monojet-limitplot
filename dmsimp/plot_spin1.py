@@ -218,6 +218,8 @@ def plot_2d(df, tag):
 
         idf = df[df.coupling==coupling]
         dmc = DMInterp(idf)
+        dmc_p1s = DMInterp(idf, quantile='p1s')
+        dmc_m1s = DMInterp(idf, quantile='m1s')
 
         logz = True
         if(logz):
@@ -228,18 +230,25 @@ def plot_2d(df, tag):
             contours_line = [1]
 
         ix,iy,iz = dmc.grid
+        ix_p1s,iy_p1s,iz_p1s = dmc_p1s.grid
+        ix_m1s,iy_m1s,iz_m1s = dmc_m1s.grid
         if logz: 
             iz = np.log10(iz)
+            iz_p1s = np.log10(iz_p1s)
+            iz_m1s = np.log10(iz_m1s)
 
         fig = plt.figure(figsize=(14,10))
 
         iz[iz<min(contours_filled)] = min(contours_filled)
         iz[iz>max(contours_filled)] = max(contours_filled)
+
         CF = plt.contourf(ix, iy, iz, levels=contours_filled, cmap=cmap)
         for c in CF.collections:
             c.set_edgecolor("face")
         cb = plt.colorbar()
         CS2 = plt.contour(ix, iy, iz, levels=contours_line, colors="navy", linestyles="solid",linewidths = 3, zorder=2)
+        plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
+        plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
         cb.add_lines(CS2)
 
         hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
@@ -381,8 +390,8 @@ def main():
     df  = pd.read_pickle(infile)
 
     # Vanilla plots
-    # df95 = df[df.cl==0.95]
-    # plot_2d(df95,tag=tag)
+    df95 = df[df.cl==0.95]
+    plot_2d(df95,tag=tag)
     # plot_1d(df95, tag)
 
     # # Coupling plot
