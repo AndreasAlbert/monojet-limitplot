@@ -40,7 +40,7 @@ def add_d_limits(df, tag):
 
         fig = plt.gcf()
         fig.clf()
-        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         ax = fig.gca()
         ax.plot(x, idf.exp,zorder=2,marker='o',fillstyle='none',color='k', markersize=10, label="Median expected",lw=2)
         ax.fill_between(x, idf.m1s, idf.p1s,color='green',zorder=1, label=r'68% expected')
@@ -113,7 +113,7 @@ def add_md_limits(tag):
     m2s = [mdlimits[ix]['m2s'] for ix in x]
 
     plt.gcf().clf()
-    hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+    hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
     eb = plt.errorbar(x, exp, xerr=0.5, yerr=0, zorder=2,marker='o',fillstyle='none',color='k',ls="None", label="Median expected", markersize=10, linewidth=2)
     eb[-1][0].set_linestyle('--')
     binned_fill(x, m1s, p1s,zorder=1,color=brazilgreen, label=r'68% expected')

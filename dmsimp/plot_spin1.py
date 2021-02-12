@@ -21,8 +21,9 @@ pjoin = os.path.join
 plt.style.use(hep.style.CMS)
 
 cmap = mcolors.LinearSegmentedColormap.from_list("n", list(reversed([
-    '#fff5f0',
+    # '#fff5f0',
     '#fee0d2',
+    '#ffffff',
     '#fcbba1',
     '#fc9272',
     '#fb6a4a',
@@ -30,6 +31,7 @@ cmap = mcolors.LinearSegmentedColormap.from_list("n", list(reversed([
     '#cb181d',
     '#a50f15',
     '#67000d',
+    # '#000000',
         ])))
 
 def plot_1d(df, tag):
@@ -40,7 +42,7 @@ def plot_1d(df, tag):
         idf = df[(df.mdm==1)&(df.coupling==coupling)]
 
         fig = plt.gcf()
-        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137)
         ax = plt.gca()
         ax.plot(idf.mmed, idf.exp,marker='o',fillstyle='none',color='k',ls="-", label="Median expected", markersize=10, linewidth=2,zorder=2)
         ax.fill_between(idf.mmed, idf.m1s,idf.p1s, color=brazilgreen,label=r'68% expected',zorder=1)
@@ -90,7 +92,7 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
                 
         fig = plt.gcf()
-        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         ax = plt.gca()
         if coupling_type=='gq':
             exp = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.exp)])
@@ -247,11 +249,13 @@ def plot_2d(df, tag):
             c.set_edgecolor("face")
         cb = plt.colorbar()
         CS2 = plt.contour(ix, iy, iz, levels=contours_line, colors="navy", linestyles="solid",linewidths = 3, zorder=2)
-        plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
+        CS2.collections[0].set_label('Median expected')
+        CS3 = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
+        CS3.collections[0].set_label('Expected $\pm$ 1 s.d.')
         plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
         cb.add_lines(CS2)
 
-        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         plt.clim([1e-1,1e1])
         cb.set_label("95% CL expected limit on $\log_{10}(\mu)$")
         plt.plot([0,3000],[0,1500],'--',color='gray')
@@ -259,14 +263,18 @@ def plot_2d(df, tag):
         plt.ylabel("$m_{DM} $(GeV)")
         plt.ylim(0,1500)
         plt.xlim(0,3000)
-        plt.text(50,1300, 
-        '\n'.join([
+        # plt.text(100,1300, 
+        # '\n'.join([
+        #     f'{coupling.capitalize()} mediator',
+        #     '$g_{q} = 0.25, g_{\chi} = 1.0$'
+        # ])
+        # )
+        draw_2016(coupling)
+
+        plt.legend(loc='upper left', title= '\n'.join([
             f'{coupling.capitalize()} mediator',
             '$g_{q} = 0.25, g_{\chi} = 1.0$'
-        ])
-        )
-
-
+        ]))
         relic_contours = load_relic(coupling)
         for x,y in relic_contours:
             plt.plot(x,y, color='gray',lw=2)
@@ -347,6 +355,7 @@ def plot_dd(df, tag):
 
     for coupling in 'vector', 'axial':
         plt.gcf().clf()
+        fig = plt.figure(figsize=(11,9))
 
         idf = df[df.coupling==coupling]
         dmi = DMInterp(idf)
@@ -374,13 +383,25 @@ def plot_dd(df, tag):
         plt.xlabel("$m_{DM}$ (GeV)")
         plt.ylabel("$\sigma_{DM-nucleon}$ (cm$^2$)")
         plt.text(1.7e3,3e-47,"90% CL", ha='right', color='gray')
-        hep.cms.cmslabel(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True, supplementary=True)
         plot_dd_refs(coupling)
         plt.legend()
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd.{ext}"))
 
 
+def draw_2016(mediator):
+    f = uproot.open("input/2016/HEPData-ins1641762-v1-root.root")
+    if mediator=='vector':
+        gobs = f['Observed exclusion contour for vector mediator/Graph1D_y1']
+        gexp = f['Expected exclusion contour for vector mediator/Graph1D_y1']
+    elif mediator=='axial':
+        gobs = f['Observed exclusion contour for axial-vector mediator/Graph1D_y1']
+        gexp = f['Expected exclusion contour for axial-vector mediator/Graph1D_y1']
+
+    color='gold'
+    plt.plot(gobs.xvalues, gobs.yvalues, color=color, lw=3, label='2016 observed')
+    plt.plot(gexp.xvalues, gexp.yvalues, color=color, lw=3, ls='--', label='2016 median expected')
 def main():
     # Input
     # infile = "input//limit_df.pkl"
