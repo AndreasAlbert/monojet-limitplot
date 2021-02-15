@@ -406,7 +406,7 @@ def main():
     # Input
     # infile = "input//limit_df.pkl"
     # infile = "input/2020-09-14/limit_df.pkl"
-    tag = '2020-10-04_03Sep20v7'
+    tag = '2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default'
     infile = f'../input/{tag}/limit_df.pkl'
     df  = pd.read_pickle(infile)
 
@@ -415,16 +415,16 @@ def main():
     plot_2d(df95,tag=tag)
     # plot_1d(df95, tag)
 
-    # # Coupling plot
-    # dfs = []
-    # for cp in ['gq','gchi']:
-    #     for correct in True, False:
-    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    # Coupling plot
+    dfs = []
+    for cp in ['gq','gchi']:
+        for correct in True, False:
+            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
-    # dfout = pd.concat(dfs)
-    # dfout.to_pickle(
-    #     pjoin('./output/',tag, 'coupling_limit_df.pkl')
-    # )
+    dfout = pd.concat(dfs)
+    dfout.to_pickle(
+        pjoin('./output/',tag, 'coupling_limit_df.pkl')
+    )
 
     # DD
     df90 = df[df.cl==0.90]

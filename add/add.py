@@ -136,7 +136,7 @@ def add_md_limits(tag):
         plt.gcf().savefig(pjoin(outdir, f"md_with2016.{ext}"))
 
 def main():
-    inpath = "../dmsimp/input/2020-10-04_03Sep20v7/limit_df.pkl"
+    inpath = "../input/2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default/limit_df.pkl"
     df  = pd.read_pickle(inpath)
     df = df[df.cl==0.95]
     df = df[~np.isnan(df.d)]
