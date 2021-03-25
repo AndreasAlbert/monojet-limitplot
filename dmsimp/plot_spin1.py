@@ -35,7 +35,7 @@ cmap = mcolors.LinearSegmentedColormap.from_list("n", list(reversed([
         ])))
 
 def plot_1d(df, tag):
-    outdir = f'./output/{tag}'
+    outdir = f'./output/{tag}/spin1'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     for coupling in 'vector', 'axial':
@@ -78,7 +78,7 @@ def binned_fill(x, low, high, **kwargs):
 
 def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
-    outdir = pjoin("./output/",tag)
+    outdir = pjoin("./output/",tag,'spin1')
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
@@ -209,7 +209,7 @@ def fdm_analytic(mmed, mdm, coupling):
 
 def plot_2d(df, tag):
 
-    outdir = pjoin("./output",tag)
+    outdir = pjoin("./output/",tag,'spin1')
     try:
         os.makedirs(outdir)
     except FileExistsError:
@@ -347,7 +347,7 @@ def plot_dd_refs(coupling):
 
 def plot_dd(df, tag):
 
-    outdir = pjoin("./output",tag)
+    outdir = pjoin("./output/",tag, "spin1")
     try:
         os.makedirs(outdir)
     except FileExistsError:

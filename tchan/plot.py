@@ -1,3 +1,4 @@
+import os
 import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import pyplot as plt
@@ -5,7 +6,7 @@ from limitlib import fill_dummy_values, interpolate_rbf, load_directory
 
 import pandas as pd
 
-
+pjoin = os.path.join
 
 import mplhep as hep
 
@@ -63,7 +64,7 @@ y16 = np.array([
 ])
 
 
-def plot2d_nointerp(df):
+def plot2d_nointerp(df, tag):
     plt.clf()
     fig = plt.gcf()
     ax = plt.gca()
@@ -88,9 +89,13 @@ def plot2d_nointerp(df):
             y16,
             x16,
             color='r',label='2016')
-    fig.savefig("output/tchan_2d_nointerp.pdf")
 
-def plot2d(df):
+    outdir = f'./output/{tag}'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    fig.savefig(pjoin("tchan_2d_nointerp.pdf"))
+
+def plot2d(df, tag):
     plt.clf()
     fig = plt.figure(figsize=(14,10))
     ax = plt.gca()
@@ -152,15 +157,19 @@ def plot2d(df):
             f't-channel DM (S3D UR), $\lambda=1.0$'
         ]))
     hep.cms.label(data=True, year='2017-2018', lumi=101,paper=True)
-    fig.savefig("output/tchan_2d.pdf")
+
+    outdir = f'./output/{tag}'
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    fig.savefig(pjoin(outdir, "tchan_2d.pdf"))
 
 
 def main():
     tag = '2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default'
     df = pd.read_pickle(f"../input/{tag}/limit_df.pkl")
     df = df[(df.cl==0.95)& (~np.isnan(df.mphi)) &  (~np.isnan(df.mchi))]
-    plot2d_nointerp(df)
-    plot2d(df)
+    plot2d_nointerp(df, tag)
+    plot2d(df, tag)
 
 if __name__ == "__main__":
     main()
