@@ -11,11 +11,11 @@ from collections import defaultdict
 pjoin = os.path.join
 plt.style.use(hep.style.CMS)
 def find_intersection(x, y, value):
-    f = interp1d(x,y, fill_value="extrapolate")
+    f = interp1d(x,y, fill_value="extrapolate", kind="linear")
 
     minfun = lambda tmp : (f(tmp)-value)**2
 
-    result = minimize(minfun, x0=np.mean(x))
+    result = minimize(minfun, x0=7)
 
     return result
 
@@ -36,27 +36,37 @@ def add_d_limits(df, tag):
         x = idf['md']
         for quantile in ['exp','obs','p1s','m1s','p2s','m2s']:
             y = idf[quantile]
-            res = find_intersection(x, y, 1)
-            mdlimits[d][quantile] = res.x[0]
+            res = find_intersection(x, np.log10(y), 0)
+            mdlimits[d][quantile] = max(res.x)
 
         fig = plt.gcf()
         fig.clf()
         hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         ax = fig.gca()
-        ax.plot(x, idf.exp,zorder=2,marker='o',fillstyle='none',color='k', markersize=10, label="Median expected",lw=2)
-        ax.fill_between(x, idf.m1s, idf.p1s,color='green',zorder=1, label=r'68% expected')
-        ax.fill_between(x, idf.m2s, idf.p2s,color='orange',zorder=0, label=r'95% expected')
+
+        xinterp = np.linspace(min(x),max(x),50)
+        ax.plot(x, np.log10(idf.exp),zorder=2,marker='o',ls="--",fillstyle='none',color='k', markersize=10, label="Median expected",lw=2)
+        ax.plot(x, np.log10(idf.obs),zorder=2,marker='o',color='k', markersize=10, label="Observed",lw=2)
+        ax.fill_between(x, np.log10(idf.m1s), np.log10(idf.p1s),color='green',zorder=1, label=r'68% expected')
+        ax.fill_between(x, np.log10(idf.m2s), np.log10(idf.p2s),color='orange',zorder=0, label=r'95% expected')
+
+        ax.plot(2*[mdlimits[d]['obs']],[-0.1,0.1],ls='--',color='r')
+        ax.plot(2*[mdlimits[d]['exp']],[-0.1,0.1],ls='--',color='r')
+        ax.plot(2*[mdlimits[d]['p1s']],[-0.1,0.1],ls='--',color='r')
+        ax.plot(2*[mdlimits[d]['p2s']],[-0.1,0.1],ls='--',color='r')
+        ax.plot(2*[mdlimits[d]['m1s']],[-0.1,0.1],ls='--',color='r')
+        ax.plot(2*[mdlimits[d]['m2s']],[-0.1,0.1],ls='--',color='r')
 
         ymin = min(idf.exp)
         ymax = max(idf.exp)
 
         # plt.plot([mdlimits[d]['exp'],mdlimits[d]['exp']]2,[ymin,ymax],color='red',lw=2)
-        plt.plot([min(x), max(x)],[1,1],color='red',lw=2)
+        plt.plot([min(x), max(x)],[0, 0],color='red',lw=2)
 
         ax = plt.gca()
         ax.set_xlabel("$M_{D}$ (TeV)")
-        ax.set_ylabel("95% CL upper limit on the signal strength $\mu$")
-        ax.set_ylim(0,3)
+        ax.set_ylabel("95% CL upper limit on $log_{10}(\mu)$")
+        ax.set_ylim(-1,1)
         plt.legend(title=f'ADD, d = {d:.0f}', loc='upper left')
         for ext in ['pdf','png']:
             plt.gcf().savefig(pjoin(outdir, f"d{d}.{ext}"))
@@ -117,6 +127,7 @@ def add_md_limits(tag):
     hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
     eb = plt.errorbar(x, exp, xerr=0.5, yerr=0, zorder=2,marker='o',fillstyle='none',color='k',ls="None", label="Median expected", markersize=10, linewidth=2)
     eb[-1][0].set_linestyle('--')
+    plt.errorbar(x, obs, xerr=0.5, yerr=0, zorder=2,marker='o',color='k',ls="None", label="Observed", markersize=10, linewidth=2)
     binned_fill(x, m1s, p1s,zorder=1,color=brazilgreen, label=r'68% expected')
     binned_fill(x, m2s, p2s,zorder=0,color=brazilyellow, label=r'95% expected')
 
