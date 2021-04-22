@@ -43,6 +43,7 @@ def plot_1d(limits, tag):
 
     mlq_list = []
     ylq_exp_list = []
+    ylq_obs_list = []
     ylq_p1s_list = []
     ylq_p2s_list = []
     ylq_m1s_list = []
@@ -53,6 +54,7 @@ def plot_1d(limits, tag):
         plt.fill_between(ilims.ylq,ilims.m2s,ilims.p2s,color='orange', label='Expected $\pm$ 2 s.d.')
         plt.fill_between(ilims.ylq,ilims.m1s,ilims.p1s,color='green', label='Expected $\pm$ 1 s.d.')
         plt.plot(ilims.ylq,ilims.exp,'k--o', label='Expected', fillstyle='none')
+        plt.plot(ilims.ylq,ilims.obs,'k-o', label='Observed')
         plt.yscale("log")
         # plt.xscale("log")
         plt.plot([min(ilims.ylq), max(ilims.ylq)],[1,1],'r-')
@@ -68,12 +70,15 @@ def plot_1d(limits, tag):
         
 
 
+        ylq_obs = find_intersection(ilims.ylq, ilims.obs)
         ylq_exp = find_intersection(ilims.ylq, ilims.exp)
         ylq_m1s = find_intersection(ilims.ylq, ilims.m1s)
         ylq_m2s = find_intersection(ilims.ylq, ilims.m2s)
         ylq_p1s = find_intersection(ilims.ylq, ilims.p1s)
         ylq_p2s = find_intersection(ilims.ylq, ilims.p2s)
 
+        if ylq_obs > 0:
+            plt.plot([ylq_obs, ylq_obs],[ymin,1e1],'r-')
         if ylq_exp > 0:
             plt.plot([ylq_exp, ylq_exp],[ymin,1e1],'r-')
         if ylq_p1s > 0:
@@ -81,6 +86,7 @@ def plot_1d(limits, tag):
         if ylq_m1s > 0:
             plt.plot([ylq_m1s, ylq_m1s],[ymin,1e1],'r--')
 
+        ylq_obs_list.append(ylq_obs)
         ylq_exp_list.append(ylq_exp)
         ylq_p1s_list.append(ylq_p1s)
         ylq_m1s_list.append(ylq_m1s)
@@ -109,10 +115,12 @@ def plot_1d(limits, tag):
     ylq_m1s_list = np.array(ylq_m1s_list)
     ylq_m2s_list = np.array(ylq_m2s_list)
     ylq_exp_list = np.array(ylq_exp_list)
+    ylq_obs_list = np.array(ylq_obs_list)
 
     sorter = mlq_list.argsort()
     mlq_list = mlq_list[sorter]
     ylq_exp_list = ylq_exp_list[sorter]
+    ylq_obs_list = ylq_obs_list[sorter]
     ylq_p1s_list = ylq_p1s_list[sorter]
     ylq_p2s_list = ylq_p2s_list[sorter]
     ylq_m1s_list = ylq_m1s_list[sorter]
@@ -120,9 +128,11 @@ def plot_1d(limits, tag):
 
     mask = (ylq_exp_list>0) &(mlq_list<2250)
     plt.plot(mlq_list[mask],ylq_exp_list[mask],'k--o', label='Median expected', fillstyle='none', ms=10,lw=2)
+    plt.plot(mlq_list[mask],ylq_obs_list[mask],'k-o', label='Observed', ms=10,lw=2)
 
     # plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label='Expected $\pm$ 2 s.d.',zorder=-1)
     plt.fill_between(mlq_list[mask],ylq_m1s_list[mask],ylq_p1s_list[mask],color='green', label='Median expected $\pm$ 1 s.d.',zorder=0)
+    plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label='Median expected $\pm$ 2 s.d.',zorder=-1)
     plt.xlabel("Leptoquark mass (GeV)")
     plt.ylabel("95% CL upper limit on $\lambda$")
     hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
@@ -142,7 +152,7 @@ def plot_1d(limits, tag):
 
 def main():
 
-    tag = '2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default'
+    tag = '2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9'
     df = pd.read_pickle(f"../input/{tag}/limit_df.pkl")
     df = df[(df.cl==0.95)& (~np.isnan(df.mlq)) &  (~np.isnan(df.ylq))]
     # limits = pd.concat(
