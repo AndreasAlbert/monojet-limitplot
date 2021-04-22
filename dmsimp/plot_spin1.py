@@ -59,7 +59,7 @@ def plot_1d(df, tag):
         plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"{coupling}_1d.{ext}"))
-            
+
         plt.close(fig)
 
 
@@ -85,28 +85,32 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
     output_dfs = []
     for coupling in 'vector', 'axial':
         idf = df[(df.mdm==1)&(df.coupling==coupling)]
+        idf = idf.sort_values(by='mmed')
         if correct_mdm:
             corr_fac = fdm_analytic(idf.mmed, np.ones(len(idf.mmed))*1./3, coupling)
-            for percentile in ['exp','p1s','p2s','m1s','m2s']:
+            for percentile in ['obs','exp','p1s','p2s','m1s','m2s']:
                 idf[percentile] = corr_fac * idf[percentile]
 
-                
+
         fig = plt.gcf()
         hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         ax = plt.gca()
         if coupling_type=='gq':
+            obs = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.obs)])
             exp = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.exp)])
             p1s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p1s)])
             m1s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m1s)])
             p2s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p2s)])
             m2s = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m2s)])
         elif coupling_type=='gchi':
+            obs = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.obs)])
             exp = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.exp)])
             p1s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p1s)])
             m1s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m1s)])
             p2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p2s)])
             m2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m2s)])
 
+        obs[np.isnan(obs) | np.isinf(obs)] = 1e2
         exp[np.isnan(exp) | np.isinf(exp)] = 1e2
         p1s[np.isnan(p1s) | np.isinf(p1s)] = 1e2
         p2s[np.isnan(p2s) | np.isinf(p2s)] = 1e2
@@ -115,6 +119,7 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
         tmp_df = pd.DataFrame(
             {
+            'obs' :obs,
             'exp' :exp,
             'p1s' : p1s,
             'p2s' : p2s,
@@ -129,13 +134,24 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         output_dfs.append(tmp_df)
 
         ax.plot(
-                idf.mmed, 
+                idf.mmed,
                 exp,
                 marker='o',
                 fillstyle='none',
                 color='k',
                 ls="--",
                 label="Median expected",
+                markersize=10,
+                linewidth=2,
+                zorder=2,
+                )
+        ax.plot(
+                idf.mmed,
+                obs,
+                marker='o',
+                color='k',
+                ls="-",
+                label="Observed",
                 markersize=10,
                 linewidth=2,
                 zorder=2,
@@ -171,9 +187,9 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
             plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
-            
+
         plt.close(fig)
-        
+
     return output_dfs
 # def plot_coupling(df):
 #     for coupling in 'vector', 'axial':
@@ -222,6 +238,9 @@ def plot_2d(df, tag):
         dmc = DMInterp(idf)
         dmc_p1s = DMInterp(idf, quantile='p1s')
         dmc_m1s = DMInterp(idf, quantile='m1s')
+        dmc_p2s = DMInterp(idf, quantile='p2s')
+        dmc_m2s = DMInterp(idf, quantile='m2s')
+        dmc_obs = DMInterp(idf, quantile='obs')
 
         logz = True
         if(logz):
@@ -234,36 +253,51 @@ def plot_2d(df, tag):
         ix,iy,iz = dmc.grid
         ix_p1s,iy_p1s,iz_p1s = dmc_p1s.grid
         ix_m1s,iy_m1s,iz_m1s = dmc_m1s.grid
-        if logz: 
+        ix_p2s,iy_p2s,iz_p2s = dmc_p2s.grid
+        ix_m2s,iy_m2s,iz_m2s = dmc_m2s.grid
+        ix_obs,iy_obs,iz_obs = dmc_obs.grid
+        if logz:
             iz = np.log10(iz)
             iz_p1s = np.log10(iz_p1s)
             iz_m1s = np.log10(iz_m1s)
+            iz_p2s = np.log10(iz_p2s)
+            iz_m2s = np.log10(iz_m2s)
+            iz_obs = np.log10(iz_obs)
 
         fig = plt.figure(figsize=(14,10))
 
         iz[iz<min(contours_filled)] = min(contours_filled)
         iz[iz>max(contours_filled)] = max(contours_filled)
 
-        CF = plt.contourf(ix, iy, iz, levels=contours_filled, cmap=cmap)
+        iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
+        iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
+
+        CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap)
         for c in CF.collections:
             c.set_edgecolor("face")
         cb = plt.colorbar()
-        CS2 = plt.contour(ix, iy, iz, levels=contours_line, colors="navy", linestyles="solid",linewidths = 3, zorder=2)
+
+        color = 'navy'
+
+        CS2 = plt.contour(ix, iy, iz, levels=contours_line, colors=color, linestyles="--",linewidths = 2, zorder=2)
         CS2.collections[0].set_label('Median expected')
-        CS3 = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
-        CS3.collections[0].set_label('Expected $\pm$ 1 s.d.')
-        plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors="navy", linestyles="--",linewidths = 3, zorder=2)
-        cb.add_lines(CS2)
+        CS3 = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color, linestyles="solid",linewidths = 3, zorder=2)
+        CS3.collections[0].set_label('Observed')
+        CS4 = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        CS4.collections[0].set_label('Expected $\pm$ 1 s.d.')
+
+        plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        cb.add_lines(CS3)
 
         hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         plt.clim([1e-1,1e1])
-        cb.set_label("95% CL expected limit on $\log_{10}(\mu)$")
+        cb.set_label("95% CL observed limit on $\log_{10}(\mu)$")
         plt.plot([0,3000],[0,1500],'--',color='gray')
         plt.xlabel("$m_{med}$ (GeV)")
         plt.ylabel("$m_{DM} $(GeV)")
         plt.ylim(0,1500)
         plt.xlim(0,3000)
-        # plt.text(100,1300, 
+        # plt.text(100,1300,
         # '\n'.join([
         #     f'{coupling.capitalize()} mediator',
         #     '$g_{q} = 0.25, g_{\chi} = 1.0$'
@@ -285,6 +319,11 @@ def plot_2d(df, tag):
             plt.text(2400,600,"$\Omega h^2$ = 0.12", color="gray", rotation=30)
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour.{ext}"))
+        if coupling == 'axial':
+            draw_atlas(coupling)
+            plt.legend(loc='upper left')
+            for ext in 'pdf','png':
+                plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour_withatlas.{ext}"))
         plt.close(plt.gcf())
 
 def load_relic(coupling):
@@ -370,7 +409,7 @@ def plot_dd(df, tag):
         for fill in np.logspace(1,mdm[-1],10):
             mmed = np.r_[mmed, mmed[-1]]
             mdm = np.r_[mdm, fill]
-        
+
         mask = mdm!=0
         mmed=mmed[mask]
         mdm=mdm[mask]
@@ -400,15 +439,60 @@ def draw_2016(mediator):
         gexp = f['Expected exclusion contour for axial-vector mediator/Graph1D_y1']
 
     color='gold'
-    plt.plot(gobs.xvalues, gobs.yvalues, color=color, lw=3, label='2016 observed')
-    plt.plot(gexp.xvalues, gexp.yvalues, color=color, lw=3, ls='--', label='2016 median expected')
+    plt.plot(gobs.xvalues, gobs.yvalues, color=color, lw=2, label='2016 observed')
+    plt.plot(gexp.xvalues, gexp.yvalues, color=color, lw=2, ls='--', label='2016 median expected')
+
+def draw_atlas(coupling):
+    if coupling=='axial':
+        points = [(14.104372355430087, 109.45529290853051),
+        (155.14809590973198, 129.49640287769807),
+        (273.6248236953455, 163.41212744090467),
+        (400.5641748942171, 212.74409044193226),
+        (530.324400564175, 262.0760534429603),
+        (640.3385049365304, 309.8663926002057),
+        (803.9492242595204, 380.78108941418304),
+        (928.0677009873059, 430.11305241521086),
+        (1060.6488011283498, 479.44501541623845),
+        (1173.4837799717911, 511.8191161356631),
+        (1320.1692524682649, 558.0678314491265),
+        (1486.600846262341, 607.3997944501543),
+        (1545.8392101551478, 615.1079136690648),
+        (1658.6741889985894, 613.5662898252828),
+        (1743.3004231311704, 613.5662898252828),
+        (1802.5387870239772, 601.2332990750259),
+        (1853.314527503526, 575.0256937307299),
+        (1904.0902679830745, 550.359712230216),
+        (1935.119887165021, 519.5272353545736),
+        (1971.7912552891396, 477.9033915724565),
+        (2000.0000000000002, 442.4460431654679),
+        (2022.566995768688, 405.44707091469695),
+        (2039.4922425952043, 371.53134635149036),
+        (2078.984485190409, 303.69989722507717),
+        (2101.5514809590977, 226.61870503597152),
+        (2112.8349788434416, 171.12024665981517),
+        (2121.297602256699, 120.24665981500539),
+        (2126.939351198872, 64.74820143884926),
+        (2132.581100141044, 3.0832476875643806)]
+    else:
+        return
+    x = [p[0] for p in points]
+    y = [p[1] for p in points]
+
+    plt.plot(x,y,color='magenta',lw=2,ls='--',label='ATLAS Run-2 expected')
 def main():
     # Input
     # infile = "input//limit_df.pkl"
     # infile = "input/2020-09-14/limit_df.pkl"
-    tag = '2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default'
+    tag = '2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9_signalscale'
     infile = f'../input/{tag}/limit_df.pkl'
     df  = pd.read_pickle(infile)
+
+    df.exp = 0.01 * df.exp
+    df.obs = 0.01 * df.obs
+    df.p1s = 0.01 * df.p1s
+    df.p2s = 0.01 * df.p2s
+    df.m1s = 0.01 * df.m1s
+    df.m2s = 0.01 * df.m2s
 
     # Vanilla plots
     df95 = df[df.cl==0.95]
@@ -416,18 +500,18 @@ def main():
     # plot_1d(df95, tag)
 
     # Coupling plot
-    dfs = []
-    for cp in ['gq','gchi']:
-        for correct in True, False:
-            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    # dfs = []
+    # for cp in ['gq','gchi']:
+    #     for correct in True, False:
+    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
-    dfout = pd.concat(dfs)
-    dfout.to_pickle(
-        pjoin('./output/',tag, 'coupling_limit_df.pkl')
-    )
+    # dfout = pd.concat(dfs)
+    # dfout.to_pickle(
+    #     pjoin('./output/',tag, 'coupling_limit_df.pkl')
+    # )
 
-    # DD
-    df90 = df[df.cl==0.90]
-    plot_dd(df90, tag=tag)
+    # # DD
+    # df90 = df[df.cl==0.90]
+    # plot_dd(df90, tag=tag)
 if __name__ == "__main__":
     main()
