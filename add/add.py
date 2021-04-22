@@ -1,3 +1,4 @@
+from tabulate import tabulate
 import os
 import mplhep as hep
 import pickle
@@ -135,11 +136,40 @@ def add_md_limits(tag):
     for ext in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"md_with2016.{ext}"))
 
+    table = []
+    for md,o,e in zip(x, obs, exp):
+        table.append((md, o, e))
+    print(tabulate(table, headers=['d','MD obs.','MD exp.'],floatfmt='.1f'))
+
+def calculate_d7(df):
+    df=df.append(
+    df[df.d==6].assign(d=7), ignore_index=True
+    )
+
+    df.loc[df.d==7,'tag'] = df[df.d==7]['tag'].apply(lambda x: x.replace("d6","d7"))
+
+
+    factors = {
+                5: 0.6561275062616915,
+                6: 0.5749991701751788,
+                7: 0.49690580278979174,
+                8: 0.45637598491539816,
+                9: 0.4111812551421096
+                }
+
+    for md in 5, 6, 7:
+        mask = (df.d==7) & (df.md==md)
+        for key in 'exp','obs','p1s','p2s','m1s','m2s':
+            df.loc[mask,key] = df[mask][key] / factors[md]
+    return df
+
 def main():
-    inpath = "../input/2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default/limit_df.pkl"
+    inpath = "../input/2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9/limit_df.pkl"
     df  = pd.read_pickle(inpath)
     df = df[df.cl==0.95]
     df = df[~np.isnan(df.d)]
+
+    df = calculate_d7(df)
     tag = inpath.split("/")[-2]
     add_d_limits(df, tag)
     add_md_limits(tag)
