@@ -108,6 +108,15 @@ def plot2d(df, tag):
     exp = df['exp']
     p1s = df['p1s']
     m1s = df['m1s']
+    obs = df['obs']
+
+    mask = ~((x==1600) & (y==650))
+    x = x[mask]
+    y = y[mask]
+    exp = exp[mask]
+    obs = obs[mask]
+    p1s = p1s[mask]
+    m1s = m1s[mask]
 
     contours_filled = np.log10(np.logspace(-1,1,7))
     contours_line = [0]
@@ -115,33 +124,42 @@ def plot2d(df, tag):
     def get_x_y_z(x,y,z):
         ix, iy, iz = interpolate_rbf(x,y,z,maxval=2500  )
         iz [iy>ix] = 1e9 #* np.exp(-(iy/ix))
-        if True: 
+        if True:
             iz = np.log10(iz)
             iz[iz<min(contours_filled)] = min(contours_filled)
         return ix, iy, iz
+
     ix, iy, iz = get_x_y_z(x, y, exp)
-    CF = plt.contourf(ix, iy, iz, levels=contours_filled, cmap=cmap)
+    ix_obs, iy_obs, iz_obs = get_x_y_z(x, y, obs)
+    CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap)
     cb = plt.colorbar()
     for c in CF.collections:
         c.set_edgecolor("face")
 
     args = dict(colors='black',linewidths=3,zorder=2,levels=contours_line,)
     cs = plt.contour(
-                       ix, iy, iz, 
-                       linestyles="solid",
+                       ix, iy, iz,
+                       linestyles="--",
                        **args)
     cs.collections[0].set_label('Median expected')
+
+    cs = plt.contour(
+                       *get_x_y_z(x,y,obs),
+                       linestyles="solid",
+                       **args)
+    cs.collections[0].set_label('Observed')
+
     cs2=plt.contour(
                 *get_x_y_z(x,y,p1s),
-                linestyles="--",
+                linestyles=":",
                 **args)
     cs2.collections[0].set_label('Expected $\pm$ 1 s.d.')
     plt.contour(
                 *get_x_y_z(x,y,m1s),
-                linestyles="--",
+                linestyles=":",
                 **args)
     cb.add_lines(cs)
-    cb.set_label("95% CL expected limit on $\log_{10}(\mu)$")
+    cb.set_label("95% CL observed limit on $\log_{10}(\mu)$")
     plt.clim([1e-1,1e1])
 
     # plt.plot(x,y, marker='+',color='k', ls='none')
@@ -154,18 +172,27 @@ def plot2d(df, tag):
     ax.set_ylim(0,1200)
 
     plt.legend(loc='upper left', title= '\n'.join([
-            f't-channel DM (S3D UR), $\lambda=1.0$'
+            f't-channel DM (S3D U$_{{R}}$), $\lambda=1.0$'
         ]))
-    hep.cms.label(data=True, year='2017-2018', lumi=101,paper=True)
+    hep.cms.label(data=True, year='2016-2018', lumi=137,paper=True)
 
     outdir = f'./output/{tag}'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    fig.savefig(pjoin(outdir, "tchan_2d.pdf"))
+
+    for ext in 'pdf','png':
+        fig.savefig(pjoin(outdir, f"tchan_2d.{ext}"))
+
+    plt.plot(x,y,'+b')
+    for ix, iy, iz in zip(x,y,obs):
+        plt.text(ix, iy, f"{iz:.2f}",color='b',fontsize=10)
+
+    for ext in 'pdf','png':
+        fig.savefig(pjoin(outdir, f"tchan_2d_points.{ext}"))
 
 
 def main():
-    tag = '2021_01_24_03Sep20v7_monojv_mistag_usepol1_testMCstat_default'
+    tag = '2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9'
     df = pd.read_pickle(f"../input/{tag}/limit_df.pkl")
     df = df[(df.cl==0.95)& (~np.isnan(df.mphi)) &  (~np.isnan(df.mchi))]
     plot2d_nointerp(df, tag)
