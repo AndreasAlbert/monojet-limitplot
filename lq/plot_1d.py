@@ -16,23 +16,24 @@ plt.style.use(hep.style.CMS)
 def find_intersection(x,y,value=1):
 
     # Find intersection
-    try:
-        xinterp = np.linspace(min(x), 10*max(x), 1000)
-        finterp = interpolate.interp1d(x, y,kind='linear' if len(x)<4 else 'quadratic',fill_value="extrapolate", bounds_error=False)
-        yinterp = finterp(xinterp)
+    # try:
+    xinterp = np.linspace(0, 10*max(x), 1000)
+    finterp = interpolate.interp1d(x, y,kind='linear' if len(x)<4 else 'quadratic',fill_value="extrapolate", bounds_error=False)
+    yinterp = finterp(xinterp)
 
-        idx = np.argwhere(np.diff(np.sign(yinterp - value))).flatten()
-        ret = xinterp[idx[0]] 
-    except:
+    idx = np.argwhere(np.diff(np.sign(yinterp - value))).flatten()
+    if not len(idx):
         if np.all(y<value):
-            return min(x)
+            return 1e-6
         else:
             return -1
-
-    if ret < 0.5*min(x) or ret > 3*max(x):
-        return -1
     else:
-        return ret
+        ret = xinterp[idx[0]] 
+
+        if ret < 0.5*min(x) or ret > 3*max(x):
+            return -1
+        else:
+            return ret
 
 def plot_1d(limits, tag):
     outdir = f'./output/{tag}/coupling'
@@ -49,6 +50,9 @@ def plot_1d(limits, tag):
     ylq_m1s_list = []
     ylq_m2s_list = []
     for mlq in set(limits.mlq):
+        if mlq > 2000:
+            continue
+        print(mlq)
         ilims = limits[limits.mlq==mlq]
 
         plt.fill_between(ilims.ylq,ilims.m2s,ilims.p2s,color='orange', label='Expected $\pm$ 2 s.d.')
