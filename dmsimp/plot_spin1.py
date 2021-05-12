@@ -181,10 +181,23 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         ax.set_xlim(0,2600)
         ax.grid(ls='--')
 
-        if correct_mdm:
-            plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = $m_{{med}}$ / 3')
+        if coupling_type == 'gq':
+            coupling_statement = '$g_{DM} = 1.0$'
         else:
-            plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
+            coupling_statement = '$g_{q} = 0.25$'
+        if correct_mdm:
+            mdm_statement = '$m_{{DM}}$ = $m_{{med}}$ / 3'
+        else:
+            mdm_statement =  '$m_{{DM}}$ = 1 GeV'
+
+
+        plt.legend()
+
+        if coupling_type=='gq':
+            plt.text(100,0.2, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='left',va='top')
+        elif coupling_type=='gchi':
+            plt.text(2400,0.035, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='right',va='top')
+
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
 
@@ -268,6 +281,9 @@ def plot_2d(df, tag):
 
         iz[iz<min(contours_filled)] = min(contours_filled)
         iz[iz>max(contours_filled)] = max(contours_filled)
+        
+        iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
+        iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
 
         iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
         iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
@@ -483,7 +499,7 @@ def main():
     # Input
     # infile = "input//limit_df.pkl"
     # infile = "input/2020-09-14/limit_df.pkl"
-    tag = '2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9_signalscale'
+    tag = '2021-05-03_master_default_default'
     infile = f'../input/{tag}/limit_df.pkl'
     df  = pd.read_pickle(infile)
 
@@ -500,15 +516,15 @@ def main():
     # plot_1d(df95, tag)
 
     # Coupling plot
-    # dfs = []
-    # for cp in ['gq','gchi']:
-    #     for correct in True, False:
-    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    dfs = []
+    for cp in ['gq','gchi']:
+        for correct in True, False:
+            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
-    # dfout = pd.concat(dfs)
-    # dfout.to_pickle(
-    #     pjoin('./output/',tag, 'coupling_limit_df.pkl')
-    # )
+    dfout = pd.concat(dfs)
+    dfout.to_pickle(
+        pjoin('./output/',tag, 'coupling_limit_df.pkl')
+    )
 
     # # DD
     # df90 = df[df.cl==0.90]

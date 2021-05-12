@@ -145,6 +145,7 @@ def plot_1d(limits, tag):
 
     text = [
             f'Scalar first-generation\nleptoquark',
+            f'valid for $\lambda \gtrapprox 10^{{-5}}$'
         ]
     plt.text(500,1.4, 
         '\n'.join(text)
@@ -156,7 +157,7 @@ def plot_1d(limits, tag):
 
 def main():
 
-    tag = '2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9'
+    tag = '2021-05-03_master_default_default'
     df = pd.read_pickle(f"../input/{tag}/limit_df.pkl")
     df = df[(df.cl==0.95)& (~np.isnan(df.mlq)) &  (~np.isnan(df.ylq))]
     # limits = pd.concat(

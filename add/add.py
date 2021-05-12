@@ -175,7 +175,7 @@ def calculate_d7(df):
     return df
 
 def main():
-    inpath = "../input/2021-03-25_unblind_2021-03-27_unblind_v2_default_templatereplace_v9/limit_df.pkl"
+    inpath = "../input/2021-05-03_master_default_default/limit_df.pkl"
     df  = pd.read_pickle(inpath)
     df = df[df.cl==0.95]
     df = df[~np.isnan(df.d)]
