@@ -281,7 +281,7 @@ def plot_2d(df, tag):
 
         iz[iz<min(contours_filled)] = min(contours_filled)
         iz[iz>max(contours_filled)] = max(contours_filled)
-        
+
         iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
         iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
 
@@ -512,7 +512,7 @@ def main():
 
     # Vanilla plots
     df95 = df[df.cl==0.95]
-    plot_2d(df95,tag=tag)
+    # plot_2d(df95,tag=tag)
     # plot_1d(df95, tag)
 
     # Coupling plot
@@ -526,8 +526,8 @@ def main():
         pjoin('./output/',tag, 'coupling_limit_df.pkl')
     )
 
-    # # DD
-    # df90 = df[df.cl==0.90]
-    # plot_dd(df90, tag=tag)
+    # DD
+    df90 = df[df.cl==0.90]
+    plot_dd(df90, tag=tag)
 if __name__ == "__main__":
     main()

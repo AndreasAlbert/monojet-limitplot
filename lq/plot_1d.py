@@ -144,13 +144,14 @@ def plot_1d(limits, tag):
 
 
     text = [
-            f'Scalar first-generation\nleptoquark',
+            f'Scalar first-generation leptoquark',
             f'valid for $\lambda \gtrapprox 10^{{-5}}$'
         ]
-    plt.text(500,1.4, 
-        '\n'.join(text)
+    plt.text(500,2.0, 
+        '\n'.join(text),
+        va='top'
         )
-    plt.legend(loc='lower right')
+    plt.legend(loc=(0.03,0.5))
     for extension in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"mlq_coupling.{extension}"))
     plt.gcf().clf()

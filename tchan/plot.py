@@ -250,9 +250,9 @@ def plot2d(df, tag):
     ax = plt.gca()
     ax.set_ylim(0,1200)
 
-    plt.legend(loc='upper left', title= '\n'.join([
-            f't-channel DM (S3D U$_{{R}}$), $\lambda=1.0$'
-        ]))
+    plt.legend(loc='upper left')
+
+    plt.text(2400,1100,'\n'.join([f't-channel DM (S3D U$_{{R}}$)', '$\lambda=1.0$']), ha='right',va='top')
     hep.cms.label(data=True, year='2016-2018', lumi=137,paper=True)
 
     outdir = f'./output/{tag}'
