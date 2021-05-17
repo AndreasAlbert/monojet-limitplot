@@ -174,7 +174,7 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
             ax.plot([0,2600],[1.0,1.0],lw=2,ls='-',color="crimson")
             ax.text(200,0.9,'$g_{DM}$ = 1.0', color='crimson', va='top')
             ax.set_ylim(1e-2,2)
-            ax.set_ylabel("Upper limit on the coupling $g_{DM}$")
+            ax.set_ylabel("Upper limit on the coupling $g_{\chi}$")
 
         ax.set_yscale("log")
         ax.set_xlabel("$M_{med}$ (GeV)")
@@ -182,7 +182,7 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         ax.grid(ls='--')
 
         if coupling_type == 'gq':
-            coupling_statement = '$g_{DM} = 1.0$'
+            coupling_statement = '$g_{\chi} = 1.0$'
         else:
             coupling_statement = '$g_{q} = 0.25$'
         if correct_mdm:
