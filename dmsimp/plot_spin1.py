@@ -93,7 +93,7 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
 
         fig = plt.gcf()
-        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
+
         ax = plt.gca()
         if coupling_type=='gq':
             obs = np.array([determine_gq_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.obs)])
@@ -167,12 +167,12 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
         if coupling_type=='gq':
             ax.plot([0,2600],[0.25,0.25],lw=2,ls='-',color="crimson")
-            ax.text(200,0.25,'$g_{q}$ = 0.25', color='crimson', va='bottom')
+            ax.text(200,0.23,'$g_{q}$ = 0.25', color='crimson', va='top')
             ax.set_ylim(1e-2,0.5)
             ax.set_ylabel("Upper limit on the coupling $g_{q}$")
         elif coupling_type=='gchi':
             ax.plot([0,2600],[1.0,1.0],lw=2,ls='-',color="crimson")
-            ax.text(200,1.0,'$g_{DM}$ = 1.0', color='crimson', va='bottom')
+            ax.text(200,0.9,'$g_{DM}$ = 1.0', color='crimson', va='top')
             ax.set_ylim(1e-2,2)
             ax.set_ylabel("Upper limit on the coupling $g_{DM}$")
 
@@ -194,12 +194,17 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         plt.legend()
 
         if coupling_type=='gq':
-            plt.text(100,0.2, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='left',va='top')
+            plt.text(100,0.15, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='left',va='top')
         elif coupling_type=='gchi':
             plt.text(2400,0.035, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='right',va='top')
 
+        hep.cms.label(data=True, year='2016-2018', lumi=137,loc=1)
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
+
+        hep.cms.label(data=True, year='2016-2018', lumi=137, label='Supplementary',loc=1)
+        for ext in ['png','pdf']:
+            fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}_supplementary.{ext}"))
 
         plt.close(fig)
 
@@ -438,12 +443,19 @@ def plot_dd(df, tag):
         plt.xlabel("$m_{DM}$ (GeV)")
         plt.ylabel("$\sigma_{DM-nucleon}$ (cm$^2$)")
         plt.text(1.7e3,3e-47,"90% CL", ha='right', color='gray')
-        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True, supplementary=True)
+
+        if coupling=='axial':
+            plt.text(1.1,3e-47,"Spin dependent", ha='left', color='gray')
+        else:
+            plt.text(1.1,3e-47,"Spin independent", ha='left', color='gray')
+
+        hep.cms.label(data=True, label='Supplementary', lumi=137)
+
+        # hep.cms.label(data=True, year=False, lumi=137, paper=True, supplementary=True)
         plot_dd_refs(coupling)
         plt.legend()
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd.{ext}"))
-
 
 def draw_2016(mediator):
     f = uproot.open("input/2016/HEPData-ins1641762-v1-root.root")

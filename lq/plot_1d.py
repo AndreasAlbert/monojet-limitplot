@@ -28,7 +28,7 @@ def find_intersection(x,y,value=1):
         else:
             return -1
     else:
-        ret = xinterp[idx[0]] 
+        ret = xinterp[idx[0]]
 
         if ret < 0.5*min(x) or ret > 3*max(x):
             return -1
@@ -71,7 +71,7 @@ def plot_1d(limits, tag):
         hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
 
         # plt.xlim(0,1000)
-        
+
 
 
         ylq_obs = find_intersection(ilims.ylq, ilims.obs)
@@ -105,7 +105,7 @@ def plot_1d(limits, tag):
         ]
         if ylq_exp > 0:
             text.append(f'Coupling limit = {ylq_exp:.2f} ({ylq_p1s:.2f} -- {ylq_m1s:.2f})')
-        plt.text(1.1*min(ilims.ylq),0.05, 
+        plt.text(1.1*min(ilims.ylq),0.05,
         '\n'.join(text)
         )
 
@@ -147,10 +147,11 @@ def plot_1d(limits, tag):
             f'Scalar first-generation leptoquark',
             f'valid for $\lambda \gtrapprox 10^{{-5}}$'
         ]
-    plt.text(500,2.0, 
+    plt.text(500,1.95,
         '\n'.join(text),
         va='top'
         )
+    plt.ylim(0,2)
     plt.legend(loc=(0.03,0.5))
     for extension in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"mlq_coupling.{extension}"))
