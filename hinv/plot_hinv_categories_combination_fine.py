@@ -132,11 +132,11 @@ for i, channel in enumerate(channels):
         label='95% CL observed' if i==0 else None
     )
     
-plt.legend(loc='upper left', ncol=2)
-hep.cms.label(data=True, year='2016-2018', lumi=137)
+plt.legend(loc=(0.,0.7), ncol=2,)
+hep.cms.label(data=True, label="Supplementary",year='2016-2018', lumi=137, loc=1)
 plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels],rotation=90)
-plt.ylim(0,1.5)
+plt.ylim(0,1.8)
 plt.subplots_adjust(bottom=0.25)
 for ext in 'pdf','png':
     fig.savefig(f"hinv_categories_combination_fine.{ext}")

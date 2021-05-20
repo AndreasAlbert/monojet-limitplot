@@ -16,6 +16,9 @@ def fdm_analytic(mmed, mdm, coupling):
         elif coupling == 'axial':
             reference = gamma_axial_chi(mmed, m_x=0, g_chi=1.0) / gamma_axial_total(mmed, m_x=0, g_chi=1.0, g_q=0.25)
             new = gamma_axial_chi(mmed, m_x=mdm, g_chi=1.0) / gamma_axial_total(mmed, m_x=mdm, g_chi=1.0, g_q=0.25)
+        elif coupling == 'pseudoscalar':
+            reference = gamma_pseudo_chi(mmed, m_x=0, g_chi=1.0) / gamma_pseudo_total(mmed, m_x=0, g_chi=1.0, g_q=0.25)
+            new = gamma_pseudo_chi(mmed, m_x=mdm, g_chi=1.0) / gamma_pseudo_total(mmed, m_x=mdm, g_chi=1.0, g_q=0.25)
         if new > 0:
             ret.append(reference/new)
         else:
@@ -95,14 +98,13 @@ class DMInterp():
         assert(len(couplings)==1)
         self.coupling = couplings.pop()
 
-        self.offshell = OffshellGenerator(self.coupling)
-        # with open(f"output/offshell/offshell_shape_{self.coupling}_mmed100.pkl","rb") as f:
-        #     self.f_offshell100 = pickle.load(f)
-        # with open(f"output/offshell/offshell_shape_{self.c2oupling}_mmed250.pkl","rb") as f:
-        #     self.f_offshell250 = pickle.load(f)
+        if self.coupling in ['axial', 'vector']:
+            self.offshell = OffshellGenerator(self.coupling)
+        else:
+            self.offshell = None
 
         x = df[df.mdm==1].mmed
-        y=np.log(df[df.mdm==1][quantile])
+        y = np.log(df[df.mdm==1][quantile])
         f = interp1d(
                     x,
                     y,
@@ -113,7 +115,11 @@ class DMInterp():
 
     def mdm_correction_factor(self, mmed, mdm):
         '''Correction factor for going from mdm~0 to finite mdm'''
-        mdm_threshold = 0.45
+        if self.coupling in ['axial','vector']:
+            mdm_threshold = 0.45
+        else:
+            mdm_threshold = 0.499
+
         factor = fdm_analytic(
                             mmed=itertools.repeat(mmed),
                             mdm=[min(mdm, mdm_threshold*mmed)],
@@ -122,34 +128,10 @@ class DMInterp():
 
 
         if mdm/mmed > mdm_threshold:
-            factor *= self.offshell.evaluate_correction(mmed, mdm)
-
-            # # corr250 = np.exp(self.f_offshell250(min(mdm/mmed, 0.6))) / np.exp(self.f_offshell250(mdm_threshold))
-            # corr100 = np.exp(self.f_offshell100(mdm/mmed)) / np.exp(self.f_offshell100(mdm_threshold))
-
-            # # corr = corr100 + (corr250-corr100)/150 * (mmed-100)
-            # # # corr = corr100 * np.exp(-(mmed/150))
-            # # # if corr<1:
-            # #     # corr = np.exp((2*mdm/mmed)**8)
-            # # # if mmed>500:
-            # # # corr *= np.exp((mdm/(mmed*mdm_threshold))**8)
-
-            # #     a = corr100
-            # #     b = np.log(corr250 / a)
-            # #     corr = a * np.exp(b * (mmed-100)/150 )
-            # # else:
-            # #     if mmed < 175:
-            # #         corr = corr100
-            # #     else:
-            # #         corr=corr250
-            # # factor *=  corr
-            # factor *= corr100
-            # if mmed>100:
-            #     if self.coupling=='vector':
-            #         factor *= 1 + (mmed-100)/400
-            #     elif self.coupling=='axial':
-            #         factor *= 1 + 3*(mmed-100)/400
-            # print(self.coupling, mmed, mdm, corr)
+            if self.offshell:
+                factor *= self.offshell.evaluate_correction(mmed, mdm)
+            else:
+                factor *= np.exp(50*((mdm/mmed) / mdm_threshold-1))
         return factor
 
     def mu_2d(self, mmed, mdm):
@@ -158,30 +140,32 @@ class DMInterp():
         return mu
 
     def mdm_fractions_for_grid(self,mmed):
-        mdmfracmax = max(5 - 4 * (mmed-100) / 400, 0.75)
-        fractions =  list(np.linspace(0.,0.35,8))
-        # fractions += list(
-        #                 mdmfracmax - np.logspace(
-        #                                          np.log10(mdmfracmax-0.35),
-        #                                          -2,
-        #                                          40)
-        #                 )
-        fractions += list(np.linspace(0.35,0.6,10))
-        fractions += list(
-                        mdmfracmax - np.linspace(
-                                                 mdmfracmax - 0.6,
-                                                 0,
-                                                 40)
-                        )
+        if self.coupling in ['axial','vector']:
+            mdmfracmax = max(5 - 4 * (mmed-100) / 400, 0.75)
+            fractions =  list(np.linspace(0.,0.35,8))
+            fractions += list(np.linspace(0.35,0.6,10))
+            fractions += list(
+                            mdmfracmax - np.linspace(
+                                                    mdmfracmax - 0.6,
+                                                    0,
+                                                    40)
+                            )
+        else:
+            fractions = [0, 1./mmed, 0.01,0.05,0.1,0.15,0.2,0.25,0.3] + list(np.linspace(0.3,0.6,30)) + list(np.linspace(0.6,1,5))
         return sorted(fractions)
     def calculate_grid(self):
         x, y, z = [], [], []
-        for mmed in np.linspace(100,3000,100):
+
+        if self.coupling in ['axial','vector']:
+            mmeds = np.linspace(100,3000,100)
+        else:
+            mmeds = np.linspace(0,1000,100)
+        for mmed in mmeds:
             for mdmfrac in self.mdm_fractions_for_grid(mmed):
                 x.append(mmed)
                 y.append(mdmfrac * mmed)
                 z.append(self.mu_2d(mmed, mmed * mdmfrac))
-        ix,iy,iz = interpolate_rbf(x,y,z,maxval=3000)
+        ix,iy,iz = interpolate_rbf(x,y,z,maxval=max(mmeds))
         self.grid = (ix,iy,iz)
 
     def get_contours(self, level):

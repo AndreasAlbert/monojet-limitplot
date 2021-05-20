@@ -124,4 +124,4 @@ for ext in 'pdf','png':
 table = []
 for c in reversed(channels):
     table.append((c.xlabel.replace("\n",""), c.exp, c.obs))
-print(tabulate(table,floatfmt=".2f", headers=['Channel','Expected','Observed']))
+print(tabulate(table,floatfmt=".3f", headers=['Channel','Expected','Observed']))
