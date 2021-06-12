@@ -2,7 +2,7 @@ import os
 import matplotlib.colors as mcolors
 import numpy as np
 from matplotlib import pyplot as plt
-from limitlib import fill_dummy_values, interpolate_rbf, load_directory
+from limitlib import fill_dummy_values, interpolate_rbf, dump_contour_to_txt
 
 import pandas as pd
 
@@ -215,29 +215,29 @@ def plot2d(df, tag):
         c.set_edgecolor("face")
 
     args = dict(colors='black',linewidths=3,zorder=2,levels=contours_line,)
-    cs = plt.contour(
+    cs_exp = plt.contour(
                        ix, iy, iz,
                        linestyles="--",
                        **args)
-    cs.collections[0].set_label('Median expected')
+    cs_exp.collections[0].set_label('Median expected')
 
-    cs = plt.contour(
+    cs_obs = plt.contour(
                        *get_x_y_z(x,y,obs),
                        linestyles="solid",
                        **args)
-    cs.collections[0].set_label('Observed')
+    cs_obs.collections[0].set_label('Observed')
 
-    cs2=plt.contour(
+    cs_p1s=plt.contour(
                 *get_x_y_z(x,y,p1s),
                 linestyles=":",
                 **args)
-    cs2.collections[0].set_label('Expected $\pm$ 1 s.d.')
-    plt.contour(
+    cs_p1s.collections[0].set_label(r'68% Expected')
+    cs_m1s = plt.contour(
                 *get_x_y_z(x,y,m1s),
                 linestyles=":",
                 **args)
-    cb.add_lines(cs)
-    cb.set_label("95% CL observed limit on $\log_{10}(\mu)$")
+    cb.add_lines(cs_obs)
+    cb.set_label("95% CL observed upper limit on $\log_{10}(\mu)$")
     plt.clim([1e-1,1e1])
 
     # plt.plot(x,y, marker='+',color='k', ls='none')
@@ -252,15 +252,19 @@ def plot2d(df, tag):
 
     plt.legend(loc='upper left')
 
-    plt.text(2400,1100,'\n'.join([f't-channel DM (S3D U$_{{R}}$)', '$\lambda=1.0$']), ha='right',va='top')
-    hep.cms.label(data=True, year='2016-2018', lumi=137,paper=True)
+    plt.text(2400,1100,'\n'.join([f'Fermion portal','(S3D U$_{{R}}$)', '$\lambda=1.0$']), ha='right',va='top')
 
     outdir = f'./output/{tag}'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
+    hep.cms.label(data=True, year='2016-2018', lumi=137)
     for ext in 'pdf','png':
         fig.savefig(pjoin(outdir, f"tchan_2d.{ext}"))
+    
+    hep.cms.label(data=True, year='2016-2018', lumi=137, label="Preliminary")
+    for ext in 'pdf','png':
+        fig.savefig(pjoin(outdir, f"tchan_2d_preliminary.{ext}"))
 
     plt.plot(x,y,'+b')
     for ix, iy, iz in zip(x,y,obs):
@@ -269,6 +273,11 @@ def plot2d(df, tag):
     for ext in 'pdf','png':
         fig.savefig(pjoin(outdir, f"tchan_2d_points.{ext}"))
 
+
+    dump_contour_to_txt(cs_exp, pjoin(outdir, "contour_tchan_exp.txt"))
+    dump_contour_to_txt(cs_obs, pjoin(outdir, "contour_tchan_obs.txt"))
+    dump_contour_to_txt(cs_p1s, pjoin(outdir, "contour_tchan_p1s.txt"))
+    dump_contour_to_txt(cs_m1s, pjoin(outdir, "contour_tchan_m1s.txt"))
 
 def main():
     tag = '2021-05-03_master_default_default'

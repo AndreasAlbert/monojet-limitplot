@@ -144,8 +144,12 @@ def add_md_limits(tag):
 
     plt.errorbar(x16, obs16, xerr=0.5, yerr=0, marker='o',color='blue', label="2016 observed", linewidth=2, markersize=10,ls="none")
     plt.legend()
+    hep.cms.label(data=True, year='2016-2018', lumi=137)
     for ext in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"md_with2016.{ext}"))
+    hep.cms.label(data=True, year='2016-2018', lumi=137, label="Preliminary")
+    for ext in ['pdf','png']:
+        plt.gcf().savefig(pjoin(outdir, f"md_with2016_preliminary.{ext}"))
 
     table = []
     for md,o,e in zip(x, obs, exp):

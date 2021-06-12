@@ -1,19 +1,15 @@
 import uproot
-import itertools
 import os
 import pickle
-from collections import defaultdict
 
 import matplotlib.colors as mcolors
 import mplhep as hep
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from scipy.interpolate import CloughTocher2DInterpolator, Rbf, interp1d
-from scipy.optimize import minimize
 
 from limitlib import (brazilgreen, brazilyellow, find_intersection,
-                      interpolate_rbf)
+                      dump_contour_to_txt)
 from mediator_width import *
 from dmsimp_lib import *
 from dmcontour import DMInterp
@@ -110,12 +106,12 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
             p2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.p2s)])
             m2s = np.array([determine_gchi_limit_analytical(mediator=coupling, mmed=m, mdm=1, mu=mu, gq_reference=0.25, gchi_reference=1.0) for m,mu in zip(idf.mmed, idf.m2s)])
 
-        obs[np.isnan(obs) | np.isinf(obs)] = 1e2
-        exp[np.isnan(exp) | np.isinf(exp)] = 1e2
-        p1s[np.isnan(p1s) | np.isinf(p1s)] = 1e2
-        p2s[np.isnan(p2s) | np.isinf(p2s)] = 1e2
-        m1s[np.isnan(m1s) | np.isinf(m1s)] = 1e2
-        m2s[np.isnan(m2s) | np.isinf(m2s)] = 1e2
+        obs[np.isnan(obs) | np.isinf(obs)] = 1e9
+        exp[np.isnan(exp) | np.isinf(exp)] = 1e9
+        p1s[np.isnan(p1s) | np.isinf(p1s)] = 1e9
+        p2s[np.isnan(p2s) | np.isinf(p2s)] = 1e9
+        m1s[np.isnan(m1s) | np.isinf(m1s)] = 1e9
+        m2s[np.isnan(m2s) | np.isinf(m2s)] = 1e9
 
         tmp_df = pd.DataFrame(
             {
@@ -133,9 +129,11 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         )
         output_dfs.append(tmp_df)
 
+        mask = (obs<1e1) & (exp<1e1) & (p2s<1e1) & (m2s<1e1)
+        mask = obs>0
         ax.plot(
-                idf.mmed,
-                exp,
+                idf.mmed[mask],
+                exp[mask],
                 marker='o',
                 fillstyle='none',
                 color='k',
@@ -146,8 +144,8 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
                 zorder=2,
                 )
         ax.plot(
-                idf.mmed,
-                obs,
+                idf.mmed[mask],
+                obs[mask],
                 marker='o',
                 color='k',
                 ls="-",
@@ -161,20 +159,20 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         # binned_fill(idf.mmed, m2s, p2s,zorder=0,color=brazilyellow, label=r'95% expected')
 
 
-        ax.fill_between(idf.mmed, m1s, p1s, color=brazilgreen,label=r'68% expected',zorder=1)
-        ax.fill_between(idf.mmed, m2s, p2s, color=brazilyellow,label=r'95% expected',zorder=0)
+        ax.fill_between(idf.mmed[mask], m1s[mask], p1s[mask], color=brazilgreen,label=r'68% expected',zorder=1)
+        ax.fill_between(idf.mmed[mask], m2s[mask], p2s[mask], color=brazilyellow,label=r'95% expected',zorder=0)
 
 
         if coupling_type=='gq':
             ax.plot([0,2600],[0.25,0.25],lw=2,ls='-',color="crimson")
             ax.text(200,0.23,'$g_{q}$ = 0.25', color='crimson', va='top')
             ax.set_ylim(1e-2,0.5)
-            ax.set_ylabel("Upper limit on the coupling $g_{q}$")
+            ax.set_ylabel("95% CL upper limit on the coupling $g_{q}$")
         elif coupling_type=='gchi':
             ax.plot([0,2600],[1.0,1.0],lw=2,ls='-',color="crimson")
             ax.text(200,0.9,'$g_{DM}$ = 1.0', color='crimson', va='top')
             ax.set_ylim(1e-2,2)
-            ax.set_ylabel("Upper limit on the coupling $g_{\chi}$")
+            ax.set_ylabel("95% CL upper limit on the coupling $g_{\chi}$")
 
         ax.set_yscale("log")
         ax.set_xlabel("$M_{med}$ (GeV)")
@@ -202,10 +200,14 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
 
-        hep.cms.label(data=True, year='2016-2018', lumi=137, label='Supplementary',loc=1)
+        labels = hep.cms.label(data=True, year='2016-2018', lumi=137, label='Supplementary',loc=1)
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}_supplementary.{ext}"))
 
+        labels[1].remove()
+        hep.cms.label(data=True, label="Preliminary", year='2016-2018', lumi=137, loc=1)
+        for ext in ['png','pdf']:
+            fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}_preliminary.{ext}"))
         plt.close(fig)
 
     return output_dfs
@@ -300,19 +302,18 @@ def plot_2d(df, tag):
 
         color = 'navy'
 
-        CS2 = plt.contour(ix, iy, iz, levels=contours_line, colors=color, linestyles="--",linewidths = 2, zorder=2)
-        CS2.collections[0].set_label('Median expected')
-        CS3 = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color, linestyles="solid",linewidths = 3, zorder=2)
-        CS3.collections[0].set_label('Observed')
-        CS4 = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
-        CS4.collections[0].set_label('Expected $\pm$ 1 s.d.')
+        contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color, linestyles="--",linewidths = 2, zorder=2)
+        contour_exp.collections[0].set_label('Median expected')
+        contour_obs = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color, linestyles="solid",linewidths = 3, zorder=2)
+        contour_obs.collections[0].set_label('Observed')
+        contour_p1s = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        contour_p1s.collections[0].set_label(r'68% Expected')
 
-        plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
-        cb.add_lines(CS3)
+        contour_m1s = plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        cb.add_lines(contour_obs)
 
-        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
         plt.clim([1e-1,1e1])
-        cb.set_label("95% CL observed limit on $\log_{10}(\mu)$")
+        cb.set_label("95% CL upper observed limit on $\log_{10}(\mu)$")
         plt.plot([0,3000],[0,1500],'--',color='gray')
         plt.xlabel("$m_{med}$ (GeV)")
         plt.ylabel("$m_{DM} $(GeV)")
@@ -338,14 +339,29 @@ def plot_2d(df, tag):
             plt.text(1500,1000,"$\Omega h^2$ = 0.12", color="gray", rotation=40)
         else:
             plt.text(2400,600,"$\Omega h^2$ = 0.12", color="gray", rotation=30)
+        
+        
+        labels = hep.cms.label(data=True, year='2016-2018', lumi=137)
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour.{ext}"))
-        if coupling == 'axial':
-            draw_atlas(coupling)
-            plt.legend(loc='upper left')
-            for ext in 'pdf','png':
-                plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour_withatlas.{ext}"))
+
+        labels[1].remove()
+        hep.cms.label(data=True, label="Preliminary", year='2016-2018', lumi=137)
+        for ext in 'pdf','png':
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour_preliminary.{ext}"))
+
+                    
+        # if coupling == 'axial':
+        #     draw_atlas(coupling)
+        #     plt.legend(loc='upper left')
+        #     for ext in 'pdf','png':
+        #         plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour_withatlas.{ext}"))
         plt.close(plt.gcf())
+
+        dump_contour_to_txt(contour_exp, pjoin(outdir, f"contour_{coupling}_exp.txt"))
+        dump_contour_to_txt(contour_obs, pjoin(outdir, f"contour_{coupling}_obs.txt"))
+        dump_contour_to_txt(contour_p1s, pjoin(outdir, f"contour_{coupling}_p1s.txt"))
+        dump_contour_to_txt(contour_m1s, pjoin(outdir, f"contour_{coupling}_m1s.txt"))
 
 def load_relic(coupling):
     with open(f"input/relic/relic_{coupling[0].capitalize()}1.pkl", "rb") as f:
@@ -371,27 +387,32 @@ def plot_dd_refs(coupling):
 
 
     colors = list(reversed([
-        '#f7fbff',
+        # '#f7fbff',
         # '#deebf7',
         '#c6dbef',
-        # '#9ecae1',
+        '#9ecae1',
         '#6baed6',
         # '#4292c6',
         '#2171b5',
         # '#08519c',
-        '#08306b'
+        '#08306b',
+        'k',
+        'b'
     ]))
     if coupling == 'vector':
         results = {
             'Xenon1T 2018' : "input/dd/si/xenon1t_2018.txt",
             'Cresst-II': "input/dd/si/cresstii.txt",
             'CDMSlite': "input/dd/si/cdmslite2015.txt",
-            'LUX' : "input/dd/si/LUX_SI_Combination_Oct2016.txt"
+            'LUX' : "input/dd/si/LUX_SI_Combination_Oct2016.txt",
+            'Panda-X II' : "input/dd/si/pandax_132_tonday_rescale.txt",
+            # 'Cresst-III' : "input/dd/si/cresstiii_2019.txt",
+            'DarkSide-50' : "input/dd/si/darkside.txt",
         }
     elif coupling == 'axial':
         results = {
             'Pico 2L' : "input/dd/sd/Pico2L.txt",
-            'Pico60' : "input/dd/sd/Pico60.txt",
+            'Pico-60' : "input/dd/sd/Pico60.txt",
             'Picasso' : "input/dd/sd/PicassoFinal.root",
         }
     for i, (name, file) in enumerate(results.items()):
@@ -418,7 +439,7 @@ def plot_dd(df, tag):
         fig = plt.figure(figsize=(11,9))
 
         idf = df[df.coupling==coupling]
-        dmi = DMInterp(idf)
+        dmi = DMInterp(idf, quantile='obs')
         contours = dmi.get_contours(level=1.0)
         assert(len(contours)==1)
         mmed, mdm = contours[0]
@@ -438,24 +459,33 @@ def plot_dd(df, tag):
         plt.plot(mdm, xs,'-', color='crimson', lw=3, label=f'{coupling.capitalize()} mediator, Dirac DM\n$g_{{q}}$=0.25, $g_{{DM}}$=1.0')
         plt.yscale("log")
         plt.xscale("log")
-        plt.ylim(1e-47,1e-36)
+        plt.ylim(1e-47,1e-35)
         plt.xlim(1, 2e3)
         plt.xlabel("$m_{DM}$ (GeV)")
-        plt.ylabel("$\sigma_{DM-nucleon}$ (cm$^2$)")
+        plt.ylabel("Upper limit on $\sigma_{DM-nucleon}$ (cm$^2$)")
         plt.text(1.7e3,3e-47,"90% CL", ha='right', color='gray')
 
         if coupling=='axial':
-            plt.text(1.1,3e-47,"Spin dependent", ha='left', color='gray')
+            plt.text(1e3,1e-36,"Spin dependent", ha='right', color='gray')
         else:
             plt.text(1.1,3e-47,"Spin independent", ha='left', color='gray')
 
-        hep.cms.label(data=True, label='Supplementary', lumi=137)
 
         # hep.cms.label(data=True, year=False, lumi=137, paper=True, supplementary=True)
         plot_dd_refs(coupling)
-        plt.legend()
+        if coupling=='axial':
+            plt.legend(ncol=2)
+        else:
+            plt.legend(ncol=2)
+
+        labels = hep.cms.label(data=True, label='Supplementary', lumi=137)
         for ext in 'pdf','png':
-            plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd.{ext}"))
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd_supplementary.{ext}"))
+
+        labels[1].remove()
+        hep.cms.label(data=True, label='Preliminary', lumi=137)
+        for ext in 'pdf','png':
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd_preliminary.{ext}"))
 
 def draw_2016(mediator):
     f = uproot.open("input/2016/HEPData-ins1641762-v1-root.root")
@@ -523,22 +553,22 @@ def main():
     df.m2s = 0.01 * df.m2s
 
     # Vanilla plots
-    df95 = df[df.cl==0.95]
+    # df95 = df[df.cl==0.95]
     # plot_2d(df95,tag=tag)
-    # plot_1d(df95, tag)
+    # # plot_1d(df95, tag)
 
     # Coupling plot
-    dfs = []
-    for cp in ['gq','gchi']:
-        for correct in True, False:
-            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    # dfs = []
+    # for cp in ['gq','gchi']:
+    #     for correct in True, False:
+    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
-    dfout = pd.concat(dfs)
-    dfout.to_pickle(
-        pjoin('./output/',tag, 'coupling_limit_df.pkl')
-    )
+    # dfout = pd.concat(dfs)
+    # dfout.to_pickle(
+    #     pjoin('./output/',tag, 'spin1/coupling_limit_df.pkl')
+    # )
 
-    # DD
+
     df90 = df[df.cl==0.90]
     plot_dd(df90, tag=tag)
 if __name__ == "__main__":

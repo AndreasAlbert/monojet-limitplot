@@ -88,7 +88,7 @@ for i, channel in enumerate(channels):
         2*[channel.m2s],
         color=colors['2s'],
         zorder=-5,
-        label='Expected $\pm$ 2 s.d.' if i==0 else None
+        label=r'95% Expected' if i==0 else None
     )
 
     plt.fill_between(
@@ -97,7 +97,7 @@ for i, channel in enumerate(channels):
         2*[channel.m1s],
         color=colors['1s'],
         zorder=-4,
-        label='Expected $\pm$ 1 s.d.' if i==0 else None
+        label=r'68% Expected' if i==0 else None
     )
 
     plt.errorbar(
@@ -109,7 +109,7 @@ for i, channel in enumerate(channels):
         fillstyle='none',
         markersize=8,
         color=colors['exp'],
-        label='95% CL expected' if i==0 else None
+        label='Median expected' if i==0 else None
     )
     plt.errorbar(
         i,
@@ -121,16 +121,20 @@ for i, channel in enumerate(channels):
         color=colors['obs'],
         markersize=8,
         ls='-',
-        label='95% CL observed' if i==0 else None
+        label='Observed' if i==0 else None
     )
     
-plt.legend(loc='upper left')
-hep.cms.label(data=True, year='2016-2018', lumi=137)
+plt.legend(loc='upper left', title='95% CL upper limits')
 plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels])
 plt.ylim(0,1)
+hep.cms.label(data=True, year='2016-2018', lumi=137)
 for ext in 'pdf','png':
     fig.savefig(f"hinv_categories_combination.{ext}")
+
+hep.cms.label(data=True, year='2016-2018', lumi=137, label="Preliminary")
+for ext in 'pdf','png':
+    fig.savefig(f"hinv_categories_combination_preliminary.{ext}")
 
 
 table = []

@@ -348,7 +348,7 @@ def f_ps(tau):
     :param m_f: dimensionless parameter
     :type m_f: float
     """
-    tau = np.complex(tau, 0)
+    tau = tau.astype(np.complex) #np.complex(tau, 0)
     return tau * (np.arctan(1. / np.sqrt(tau - 1)))**2
 
 

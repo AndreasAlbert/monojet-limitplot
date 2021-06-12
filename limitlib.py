@@ -144,5 +144,21 @@ def find_intersection(x, y, value):
     result = minimize(minfun, x0=np.mean(x))
 
     return result.x
+
+
+def dump_contour_to_txt(contour, outfile):
+    """Write contour line points into text files
+
+    :param contour: Contour to dump
+    :type contour: Matplotlib contour
+    :param outfile: Name of output file. Should contain '{}' to allow numbering
+    :type outfile: str
+    """
+    for i, path in enumerate(contour.collections[0].get_paths()):
+        with open(outfile.format(str(i)),"w") as of:
+            for point in path.vertices:
+                of.write("{} {}\n".format(*point))
+
+
 brazilgreen = "green"
 brazilyellow = "orange"

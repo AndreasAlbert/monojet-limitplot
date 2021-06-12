@@ -46,7 +46,18 @@ channels.append(Channel(
     category='combined',
     xlabel='Combination'
 ))
-
+channels.append(Channel(
+    file=os.path.join(indir, "combination/higgsCombine_hinv_m125_combined_monov.AsymptoticLimits.mH120.root"),
+    dataset='161718',
+    category='monov',
+    xlabel='Mono-V'
+))
+channels.append(Channel(
+    file=os.path.join(indir, "combination/higgsCombine_hinv_m125_combined_monojet.AsymptoticLimits.mH120.root"),
+    dataset='161718',
+    category='monojet',
+    xlabel='Monojet'
+))
 channels.append(Channel(
     file=os.path.join(indir, "higgsCombinenominal_monov_2018.AsymptoticLimits.mH120.root"),
     dataset='161718',
@@ -96,7 +107,7 @@ for i, channel in enumerate(channels):
         2*[channel.m2s],
         color=colors['2s'],
         zorder=-5,
-        label='Expected $\pm$ 2 s.d.' if i==0 else None
+        label=r'95% Expected' if i==0 else None
     )
 
     plt.fill_between(
@@ -105,7 +116,7 @@ for i, channel in enumerate(channels):
         2*[channel.m1s],
         color=colors['1s'],
         zorder=-4,
-        label='Expected $\pm$ 1 s.d.' if i==0 else None
+        label=r'68% Expected' if i==0 else None
     )
 
     plt.errorbar(
@@ -117,7 +128,7 @@ for i, channel in enumerate(channels):
         fillstyle='none',
         markersize=8,
         color=colors['exp'],
-        label='95% CL expected' if i==0 else None
+        label='Median expected' if i==0 else None
     )
     plt.errorbar(
         i,
@@ -129,17 +140,22 @@ for i, channel in enumerate(channels):
         color=colors['obs'],
         markersize=8,
         ls='-',
-        label='95% CL observed' if i==0 else None
+        label='Observed' if i==0 else None
     )
     
-plt.legend(loc=(0.,0.7), ncol=2,)
-hep.cms.label(data=True, label="Supplementary",year='2016-2018', lumi=137, loc=1)
+plt.legend(loc=(0.,0.7), ncol=2)
+plt.text(8.5,0.1,'95% CL upper limits',ha="right")
 plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels],rotation=90)
 plt.ylim(0,1.8)
 plt.subplots_adjust(bottom=0.25)
+labels = hep.cms.label(data=True, label="Supplementary",year='2016-2018', lumi=137, loc=1)
 for ext in 'pdf','png':
-    fig.savefig(f"hinv_categories_combination_fine.{ext}")
+    fig.savefig(f"hinv_categories_combination_fine_supplementary.{ext}")
+labels[1].remove()
+labels = hep.cms.label(data=True, label="Preliminary",year='2016-2018', lumi=137, loc=1)
+for ext in 'pdf','png':
+    fig.savefig(f"hinv_categories_combination_fine_preliminary.{ext}")
 
 table = []
 for c in reversed(channels):

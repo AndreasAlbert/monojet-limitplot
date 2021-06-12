@@ -68,7 +68,7 @@ def plot_1d(limits, tag):
         plt.xlabel("$y_{LQ}$")
         plt.ylabel("95% exclusion limits on $\mu$")
         plt.legend()
-        hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
+        hep.cms.label(data=True, year='2016-2018', lumi=137)
 
         # plt.xlim(0,1000)
 
@@ -130,32 +130,49 @@ def plot_1d(limits, tag):
     ylq_m1s_list = ylq_m1s_list[sorter]
     ylq_m2s_list = ylq_m2s_list[sorter]
 
-    mask = (ylq_exp_list>0) &(mlq_list<2250)
+    mask = (ylq_exp_list>0) &(mlq_list<2250) & (mlq_list>800)
     plt.plot(mlq_list[mask],ylq_exp_list[mask],'k--o', label='Median expected', fillstyle='none', ms=10,lw=2)
     plt.plot(mlq_list[mask],ylq_obs_list[mask],'k-o', label='Observed', ms=10,lw=2)
 
     # plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label='Expected $\pm$ 2 s.d.',zorder=-1)
-    plt.fill_between(mlq_list[mask],ylq_m1s_list[mask],ylq_p1s_list[mask],color='green', label='Median expected $\pm$ 1 s.d.',zorder=0)
-    plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label='Median expected $\pm$ 2 s.d.',zorder=-1)
+    plt.fill_between(mlq_list[mask],ylq_m1s_list[mask],ylq_p1s_list[mask],color='green', label=r'68% expected',zorder=0)
+    plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label=r'95% expected',zorder=-1)
     plt.xlabel("Leptoquark mass (GeV)")
     plt.ylabel("95% CL upper limit on $\lambda$")
-    hep.cms.label(data=True, year='2016-2018', lumi=137, paper=True)
+    hep.cms.label(data=True, year='2016-2018', lumi=137)
 
 
 
     text = [
             f'Scalar first-generation leptoquark',
-            f'valid for $\lambda \gtrapprox 10^{{-5}}$'
+            r'$\beta$ = 1 - BR(LQ$\rightarrow$u$\nu_{e}$) = 0'
         ]
-    plt.text(500,1.95,
+    plt.text(1000,1.9,
         '\n'.join(text),
         va='top'
         )
     plt.ylim(0,2)
     plt.legend(loc=(0.03,0.5))
+
+    hep.cms.label(data=True, year='2016-2018', lumi=137)
     for extension in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"mlq_coupling.{extension}"))
+    hep.cms.label(data=True, year='2016-2018', lumi=137, label="Preliminary")
+    for extension in ['pdf','png']:
+        plt.gcf().savefig(pjoin(outdir, f"mlq_coupling_preliminary.{extension}"))
     plt.gcf().clf()
+
+    lims = dict(
+        mlq=mlq_list[mask],
+        ylq_exp=ylq_exp_list[mask],
+        ylq_obs=ylq_obs_list[mask],
+        ylq_m1s=ylq_m1s_list[mask],
+        ylq_p1s=ylq_p1s_list[mask],
+        ylq_m2s=ylq_m2s_list[mask],
+        ylq_p2s=ylq_p2s_list[mask]
+    )
+    with open(pjoin(outdir, "lq_limit.pkl"),"wb") as f:
+        pickle.dump(lims, f)
 
 def main():
 
