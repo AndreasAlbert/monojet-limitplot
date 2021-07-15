@@ -138,7 +138,7 @@ def plot_1d(limits, tag):
     plt.fill_between(mlq_list[mask],ylq_m1s_list[mask],ylq_p1s_list[mask],color='green', label=r'68% expected',zorder=0)
     plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label=r'95% expected',zorder=-1)
     plt.xlabel("Leptoquark mass (GeV)")
-    plt.ylabel("95% CL upper limit on $\lambda$")
+    plt.ylabel("95% CL upper limit on $\lambda_\mathrm{LQ}$")
     hep.cms.label(data=True, year='2016-2018', lumi=137)
 
 

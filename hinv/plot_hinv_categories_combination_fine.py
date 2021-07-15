@@ -4,6 +4,7 @@ import os
 from matplotlib import pyplot as plt
 import uproot
 from dataclasses import dataclass
+import matplotlib
 plt.style.use(hep.style.CMS)
 
 @dataclass
@@ -119,22 +120,20 @@ for i, channel in enumerate(channels):
         label=r'68% Expected' if i==0 else None
     )
 
-    plt.errorbar(
+    plt.plot(
         i,
         channel.exp,
-        yerr=0,
-        xerr=0,
         marker='o',
         fillstyle='none',
         markersize=8,
         color=colors['exp'],
+        ls='none',
         label='Median expected' if i==0 else None
     )
     plt.errorbar(
         i,
         channel.obs,
         xerr=0.5,
-        yerr=0,
         elinewidth=2,
         marker='o',
         color=colors['obs'],
@@ -144,11 +143,28 @@ for i, channel in enumerate(channels):
     )
     
 plt.legend(loc=(0.,0.7), ncol=2)
-plt.text(8.5,0.1,'95% CL upper limits',ha="right")
+plt.text(8.3,0.1,'95% CL upper limits',ha="right")
 plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels],rotation=90)
-plt.ylim(0,1.8)
+plt.ylim(0,2)
+plt.xlim(-0.5,8.5)
 plt.subplots_adjust(bottom=0.25)
+
+# plt.gca().add_patch(matplotlib.patches.Rectangle((2.5,0.15), 8,1.15, linewidth=0, edgecolor='none', facecolor='gray',zorder=-10,alpha=0.25))
+# plt.gca().add_patch(matplotlib.patches.Rectangle((.5,0.15),  2,1.15, linewidth=0, edgecolor='none', facecolor='gray',zorder=-10,alpha=0.35))
+# plt.gca().add_patch(matplotlib.patches.Rectangle((-.5,0.15), 1,1.15, linewidth=0, edgecolor='none', facecolor='gray',zorder=-10,alpha=0.45))
+
+plt.plot([0.5,0.5],[0.,1.25],ls='--',color='k')
+plt.plot([2.5,2.5],[0.,1.25],ls='--',color='k')
+
+
+
+plt.text(3,   1.15,   "No combination", fontsize=14,ha='left',  va='center')
+plt.text(1.5, 1.15, "Years\ncombined",fontsize=14,ha='center',va='center')
+plt.text(0,   1.15,   "Final",          fontsize=14,ha='center',va='center')
+labels = hep.cms.label(data=True,year='2016-2018', lumi=137, loc=1)
+for ext in 'pdf','png':
+    fig.savefig(f"hinv_categories_combination_fine.{ext}")
 labels = hep.cms.label(data=True, label="Supplementary",year='2016-2018', lumi=137, loc=1)
 for ext in 'pdf','png':
     fig.savefig(f"hinv_categories_combination_fine_supplementary.{ext}")
@@ -156,6 +172,7 @@ labels[1].remove()
 labels = hep.cms.label(data=True, label="Preliminary",year='2016-2018', lumi=137, loc=1)
 for ext in 'pdf','png':
     fig.savefig(f"hinv_categories_combination_fine_preliminary.{ext}")
+
 
 table = []
 for c in reversed(channels):

@@ -100,12 +100,11 @@ for i, channel in enumerate(channels):
         label=r'68% Expected' if i==0 else None
     )
 
-    plt.errorbar(
+    plt.plot(
         i,
         channel.exp,
-        yerr=0,
-        xerr=0,
         marker='o',
+        ls='none',
         fillstyle='none',
         markersize=8,
         color=colors['exp'],
@@ -115,7 +114,6 @@ for i, channel in enumerate(channels):
         i,
         channel.obs,
         xerr=0.5,
-        yerr=0,
         elinewidth=2,
         marker='o',
         color=colors['obs'],

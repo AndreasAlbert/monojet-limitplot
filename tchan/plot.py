@@ -246,13 +246,13 @@ def plot2d(df, tag):
 
 
     ax.set_xlabel("$m_{\Phi}$ (GeV)")
-    ax.set_ylabel("$m_{\chi}$ (GeV)")
+    ax.set_ylabel("$m_{DM}$ (GeV)")
     ax = plt.gca()
     ax.set_ylim(0,1200)
 
     plt.legend(loc='upper left')
 
-    plt.text(2400,1100,'\n'.join([f'Fermion portal','(S3D U$_{{R}}$)', '$\lambda=1.0$']), ha='right',va='top')
+    plt.text(2400,1100,'\n'.join([f'Fermion portal','Dirac DM','(S3D_uR)', '$\lambda_\mathrm{FP}=1.0$']), ha='right',va='top')
 
     outdir = f'./output/{tag}'
     if not os.path.exists(outdir):

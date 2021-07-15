@@ -49,7 +49,7 @@ def plot_1d(df, tag):
         plt.plot([min(idf.mmed), max(idf.mmed)],[1,1],color='red',lw=2)
         plt.plot([res,res],[ymin, ymax],color='red',lw=2)
         ax.set_yscale("log")
-        ax.set_xlabel("$M_{med}$ (GeV)")
+        ax.set_xlabel("$m_{med}$ (GeV)")
         ax.set_ylabel("Upper limit on the signal strength $\mu$")
         ax.set_ylim(ymin, ymax)
         plt.legend(title=f'{coupling.capitalize()} mediator, $m_{{DM}}$ = 1 GeV')
@@ -69,8 +69,42 @@ def binned_fill(x, low, high, **kwargs):
         first = False
 
 
+def get_relic_coupling(coupling, mediator):
+    if coupling=='gq':
+        if mediator=='axial':
+            fname = 'gqa.txt'
+        elif mediator=='vector':
+            fname = 'gqv.txt'
+    if coupling=='gchi':
+        if mediator=='axial':
+            fname = 'gdma.txt'
+        elif mediator=='vector':
+            fname = 'gdmv.txt'
+    data = np.loadtxt(f'input/relic/{fname}')
+    x = data[:,0]
+    y = data[:,1]
+    return x, y 
 
-
+def relic_labels(mediator, coupling):
+    text = "$\Omega h^2$ = 0.12"
+    color = "mediumblue"
+    fontsize=24
+    if mediator=='axial':
+        if coupling=='gq':
+            plt.text(600,0.11, text, color=color, rotation=40,fontsize=fontsize)
+        elif coupling=='gchi':
+            plt.text(250,0.2, text, color=color, rotation=50,fontsize=fontsize)
+        else:
+            raise RuntimeError
+    elif mediator=='vector':
+        if coupling=='gq':
+            plt.text(1900,0.06, text, color=color, rotation=12,fontsize=fontsize)
+        elif coupling=='gchi':
+            plt.text(1900,0.23, text, color=color, rotation=12,fontsize=fontsize)
+        else:
+            raise RuntimeError
+    else:
+        raise RuntimeError
 
 def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
 
@@ -175,8 +209,8 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
             ax.set_ylabel("95% CL upper limit on the coupling $g_{\chi}$")
 
         ax.set_yscale("log")
-        ax.set_xlabel("$M_{med}$ (GeV)")
-        ax.set_xlim(0,2600)
+        ax.set_xlabel("$m_{med}$ (GeV)")
+        ax.set_xlim(0,2500)
         ax.grid(ls='--')
 
         if coupling_type == 'gq':
@@ -188,14 +222,21 @@ def plot_coupling(df, tag, coupling_type='gq', correct_mdm=False):
         else:
             mdm_statement =  '$m_{{DM}}$ = 1 GeV'
 
-
-        plt.legend()
+        if correct_mdm:
+            x_relic, y_relic = get_relic_coupling(coupling=coupling_type, mediator=coupling)
+            relic_labels(mediator=coupling, coupling=coupling_type)
+            ax.plot(x_relic,y_relic, color='mediumblue',lw=2)
 
         if coupling_type=='gq':
-            plt.text(100,0.15, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='left',va='top')
+            if coupling=='vector':
+                plt.text(100,0.15, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='left',va='top')
+                plt.legend()
+            elif coupling=='axial':
+                plt.text(2450,0.08, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='right',va='top')
+                plt.legend()
         elif coupling_type=='gchi':
             plt.text(2400,0.035, f'{coupling.capitalize()} mediator\n{coupling_statement}\n{mdm_statement}', ha='right',va='top')
-
+            plt.legend(loc=(0.1,1.5e-2))
         hep.cms.label(data=True, year='2016-2018', lumi=137,loc=1)
         for ext in ['png','pdf']:
             fig.savefig(pjoin(outdir, f"coupling_limit_{coupling}_{coupling_type}_1d_{'mdm1' if not correct_mdm else 'mdm_mmed_over_three'}.{ext}"))
@@ -295,28 +336,34 @@ def plot_2d(df, tag):
         iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
         iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
 
-        CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap)
+        CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap,zorder=-5,alpha=0.85)
         for c in CF.collections:
-            c.set_edgecolor("face")
+            c.set_edgecolor("none")
         cb = plt.colorbar()
 
-        color = 'navy'
+        color_obs = 'blue'
+        color_exp = 'navy'
 
-        contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color, linestyles="--",linewidths = 2, zorder=2)
+        contours = {}
+        contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color_exp, linestyles=[(0, (5,1))],linewidths = 2, zorder=2)
         contour_exp.collections[0].set_label('Median expected')
-        contour_obs = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color, linestyles="solid",linewidths = 3, zorder=2)
-        contour_obs.collections[0].set_label('Observed')
-        contour_p1s = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        contour_p1s = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color_exp, linestyles=[(0, (3,3))],linewidths = 2, zorder=2)
         contour_p1s.collections[0].set_label(r'68% Expected')
+        contour_m1s = plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color_exp, linestyles=[(0, (3,3))],linewidths = 2, zorder=2)
+        
+        contour_p2s = plt.contour(ix_p2s, iy_p2s, iz_p2s, levels=contours_line, colors=color_exp, linestyles=[(0, (1,5))],linewidths = 2, zorder=2)
+        contour_p2s.collections[0].set_label(r'95% Expected')
+        contour_m2s = plt.contour(ix_m2s, iy_m2s, iz_m2s, levels=contours_line, colors=color_exp, linestyles=[(0, (1,5))],linewidths = 2, zorder=2)
 
-        contour_m1s = plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color, linestyles=":",linewidths = 2, zorder=2)
+        contour_obs = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color_obs, linestyles="solid",linewidths = 4, zorder=2)
+        contour_obs.collections[0].set_label('Observed')
         cb.add_lines(contour_obs)
 
         plt.clim([1e-1,1e1])
         cb.set_label("95% CL upper observed limit on $\log_{10}(\mu)$")
         plt.plot([0,3000],[0,1500],'--',color='gray')
         plt.xlabel("$m_{med}$ (GeV)")
-        plt.ylabel("$m_{DM} $(GeV)")
+        plt.ylabel("$m_{DM}$ (GeV)")
         plt.ylim(0,1500)
         plt.xlim(0,3000)
         # plt.text(100,1300,
@@ -330,7 +377,7 @@ def plot_2d(df, tag):
         plt.legend(loc='upper left', title= '\n'.join([
             f'{coupling.capitalize()} mediator',
             '$g_{q} = 0.25, g_{\chi} = 1.0$'
-        ]))
+        ]),frameon=True,edgecolor='none',framealpha=0.75)
         relic_contours = load_relic(coupling)
         for x,y in relic_contours:
             plt.plot(x,y, color='gray',lw=2)
@@ -497,8 +544,8 @@ def draw_2016(mediator):
         gexp = f['Expected exclusion contour for axial-vector mediator/Graph1D_y1']
 
     color='gold'
-    plt.plot(gobs.xvalues, gobs.yvalues, color=color, lw=2, label='2016 observed')
-    plt.plot(gexp.xvalues, gexp.yvalues, color=color, lw=2, ls='--', label='2016 median expected')
+    plt.plot(gobs.xvalues, gobs.yvalues, color=color, lw=2, label='2016 observed',zorder=-1)
+    plt.plot(gexp.xvalues, gexp.yvalues, color=color, lw=2, ls=(0, (5,1)), label='2016 median expected',zorder=-1)
 
 def draw_atlas(coupling):
     if coupling=='axial':
@@ -553,15 +600,15 @@ def main():
     df.m2s = 0.01 * df.m2s
 
     # Vanilla plots
-    # df95 = df[df.cl==0.95]
-    # plot_2d(df95,tag=tag)
+    df95 = df[df.cl==0.95]
+    plot_2d(df95,tag=tag)
     # # plot_1d(df95, tag)
 
     # Coupling plot
-    # dfs = []
-    # for cp in ['gq','gchi']:
-    #     for correct in True, False:
-    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    dfs = []
+    for cp in ['gq','gchi']:
+        for correct in True, False:
+            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
     # dfout = pd.concat(dfs)
     # dfout.to_pickle(
@@ -569,7 +616,7 @@ def main():
     # )
 
 
-    df90 = df[df.cl==0.90]
-    plot_dd(df90, tag=tag)
+    # df90 = df[df.cl==0.90]
+    # plot_dd(df90, tag=tag)
 if __name__ == "__main__":
     main()

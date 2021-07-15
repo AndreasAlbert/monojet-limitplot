@@ -125,9 +125,9 @@ def add_md_limits(tag):
 
     plt.gcf().clf()
     hep.cms.label(data=True, year='2016-2018', lumi=137)
-    eb = plt.errorbar(x, exp, xerr=0.5, yerr=0, zorder=2,marker='o',fillstyle='none',color='k',ls="None", label="Median expected", markersize=10, linewidth=2)
+    eb = plt.errorbar(x, exp, xerr=0.5, zorder=2,marker='o',fillstyle='none',color='k',ls="None", label="Median expected", markersize=10, linewidth=2)
     eb[-1][0].set_linestyle('--')
-    plt.errorbar(x, obs, xerr=0.5, yerr=0, zorder=2,marker='o',color='k',ls="None", label="Observed", markersize=10, linewidth=2)
+    plt.errorbar(x, obs, xerr=0.5, zorder=2,marker='o',color='k',ls="None", label="Observed", markersize=10, linewidth=2)
     binned_fill(x, m1s, p1s,zorder=1,color=brazilgreen, label=r'68% expected')
     binned_fill(x, m2s, p2s,zorder=0,color=brazilyellow, label=r'95% expected')
 
@@ -142,7 +142,7 @@ def add_md_limits(tag):
 
     x16, exp16, obs16 = limits_2016()
 
-    plt.errorbar(x16, obs16, xerr=0.5, yerr=0, marker='o',color='blue', label="2016 observed", linewidth=2, markersize=10,ls="none")
+    plt.errorbar(x16, obs16, xerr=0.5,marker='o',color='blue', label="2016 observed", linewidth=2, markersize=10,ls="none")
     plt.legend()
     hep.cms.label(data=True, year='2016-2018', lumi=137)
     for ext in ['pdf','png']:

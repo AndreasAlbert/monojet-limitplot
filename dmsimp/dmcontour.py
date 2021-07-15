@@ -26,7 +26,7 @@ def fdm_analytic(mmed, mdm, coupling):
     return ret
 class OffshellGenerator():
     def __init__(self, coupling):
-        with open(f"dmsimp/input/offshell_functions/offshell_functions_{coupling}_2016.pkl","rb") as f:
+        with open(f"input/offshell_functions/offshell_functions_{coupling}_2016.pkl","rb") as f:
             self.functions = pickle.load(f)
         self.coupling = coupling
         self.filter_functions()
