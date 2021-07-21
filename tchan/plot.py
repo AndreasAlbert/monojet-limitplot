@@ -231,7 +231,7 @@ def plot2d(df, tag):
                 *get_x_y_z(x,y,p1s),
                 linestyles=":",
                 **args)
-    cs_p1s.collections[0].set_label(r'68% Expected')
+    cs_p1s.collections[0].set_label(r'68% expected')
     cs_m1s = plt.contour(
                 *get_x_y_z(x,y,m1s),
                 linestyles=":",
@@ -242,7 +242,7 @@ def plot2d(df, tag):
 
     # plt.plot(x,y, marker='+',color='k', ls='none')
     plt.plot(x16_obs,y16_obs,color='gold', label="2016 (36 fb$^{-1}$)", lw=3,zorder=1,ls='-')
-    plt.plot(x16_exp,y16_exp,color='gold', lw=3,zorder=1,ls='--')
+    # plt.plot(x16_exp,y16_exp,color='gold', lw=3,zorder=1,ls='--')
 
 
     ax.set_xlabel("$m_{\Phi}$ (GeV)")
@@ -252,13 +252,15 @@ def plot2d(df, tag):
 
     plt.legend(loc='upper left')
 
-    plt.text(2400,1100,'\n'.join([f'Fermion portal','Dirac DM','(S3D_uR)', '$\lambda_\mathrm{FP}=1.0$']), ha='right',va='top')
+    plt.text(2400,1000,'\n'.join([f'Fermion portal','Dirac DM','(S3D_uR)', '$\lambda_\mathrm{FP}=1.0$']), ha='right',va='top')
 
     outdir = f'./output/{tag}'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    hep.cms.label(data=True, year='2016-2018', lumi=137)
+    plt.text(2400,1100,"CMS", fontweight='bold', ha='right',va='bottom',fontsize=30)
+    labels = hep.cms.label_base.exp_label(exp="",data=True, year='2016-2018', lumi=137)
+    # hep.cms.label(data=True, year='2016-2018', lumi=137, loc=1)
     for ext in 'pdf','png':
         fig.savefig(pjoin(outdir, f"tchan_2d.{ext}"))
     

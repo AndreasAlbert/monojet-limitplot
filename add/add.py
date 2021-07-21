@@ -41,7 +41,7 @@ def add_d_limits(df, tag):
 
         fig = plt.gcf()
         fig.clf()
-        hep.cms.label(data=True, year='2016-2018', lumi=137)
+        hep.cms.label(data=True, year='2016-2018', lumi=137, loc=1)
         ax = fig.gca()
 
         xinterp = np.linspace(min(x),max(x),50)
@@ -124,7 +124,7 @@ def add_md_limits(tag):
     m2s = [mdlimits[ix]['m2s'] for ix in x]
 
     plt.gcf().clf()
-    hep.cms.label(data=True, year='2016-2018', lumi=137)
+    hep.cms.label(data=True, year='2016-2018', lumi=137, loc=1)
     eb = plt.errorbar(x, exp, xerr=0.5, zorder=2,marker='o',fillstyle='none',color='k',ls="None", label="Median expected", markersize=10, linewidth=2)
     eb[-1][0].set_linestyle('--')
     plt.errorbar(x, obs, xerr=0.5, zorder=2,marker='o',color='k',ls="None", label="Observed", markersize=10, linewidth=2)

@@ -4,7 +4,9 @@ import os
 from matplotlib import pyplot as plt
 import uproot
 from dataclasses import dataclass
+import matplotlib
 plt.style.use(hep.style.CMS)
+# matplotlib.rcParams['mathtext.scr']='Noto Sans'
 
 @dataclass
 class Channel:
@@ -88,7 +90,7 @@ for i, channel in enumerate(channels):
         2*[channel.m2s],
         color=colors['2s'],
         zorder=-5,
-        label=r'95% Expected' if i==0 else None
+        label=r'95% expected' if i==0 else None
     )
 
     plt.fill_between(
@@ -97,12 +99,13 @@ for i, channel in enumerate(channels):
         2*[channel.m1s],
         color=colors['1s'],
         zorder=-4,
-        label=r'68% Expected' if i==0 else None
+        label=r'68% expected' if i==0 else None
     )
 
-    plt.plot(
+    eb = plt.errorbar(
         i,
         channel.exp,
+        xerr=0.5,
         marker='o',
         ls='none',
         fillstyle='none',
@@ -110,6 +113,7 @@ for i, channel in enumerate(channels):
         color=colors['exp'],
         label='Median expected' if i==0 else None
     )
+    eb[-1][0].set_linestyle('--')
     plt.errorbar(
         i,
         channel.obs,
@@ -123,10 +127,12 @@ for i, channel in enumerate(channels):
     )
     
 plt.legend(loc='upper left', title='95% CL upper limits')
-plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
+plt.ylabel(r"$\mathcal{B}$ (H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels])
 plt.ylim(0,1)
-hep.cms.label(data=True, year='2016-2018', lumi=137)
+
+plt.text(2.4,0.95,"CMS", fontweight='bold', ha='right',va='top',fontsize=30)
+labels = hep.cms.label_base.exp_label(exp="",data=True, year='2016-2018', lumi=137)
 for ext in 'pdf','png':
     fig.savefig(f"hinv_categories_combination.{ext}")
 

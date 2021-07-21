@@ -139,7 +139,6 @@ def plot_1d(limits, tag):
     plt.fill_between(mlq_list[mask],ylq_m2s_list[mask],ylq_p2s_list[mask],color='orange', label=r'95% expected',zorder=-1)
     plt.xlabel("Leptoquark mass (GeV)")
     plt.ylabel("95% CL upper limit on $\lambda_\mathrm{LQ}$")
-    hep.cms.label(data=True, year='2016-2018', lumi=137)
 
 
 
@@ -147,14 +146,15 @@ def plot_1d(limits, tag):
             f'Scalar first-generation leptoquark',
             r'$\beta$ = 1 - BR(LQ$\rightarrow$u$\nu_{e}$) = 0'
         ]
-    plt.text(1000,1.9,
+    plt.text(2000,0.27,
         '\n'.join(text),
-        va='top'
+        va='top',
+        ha='right'
         )
     plt.ylim(0,2)
     plt.legend(loc=(0.03,0.5))
 
-    hep.cms.label(data=True, year='2016-2018', lumi=137)
+    hep.cms.label(data=True, year='2016-2018', lumi=137,loc=1)
     for extension in ['pdf','png']:
         plt.gcf().savefig(pjoin(outdir, f"mlq_coupling.{extension}"))
     hep.cms.label(data=True, year='2016-2018', lumi=137, label="Preliminary")

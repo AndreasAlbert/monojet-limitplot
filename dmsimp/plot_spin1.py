@@ -348,11 +348,11 @@ def plot_2d(df, tag):
         contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color_exp, linestyles=[(0, (5,1))],linewidths = 2, zorder=2)
         contour_exp.collections[0].set_label('Median expected')
         contour_p1s = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color_exp, linestyles=[(0, (3,3))],linewidths = 2, zorder=2)
-        contour_p1s.collections[0].set_label(r'68% Expected')
+        contour_p1s.collections[0].set_label(r'68% expected')
         contour_m1s = plt.contour(ix_m1s, iy_m1s, iz_m1s, levels=contours_line, colors=color_exp, linestyles=[(0, (3,3))],linewidths = 2, zorder=2)
         
         contour_p2s = plt.contour(ix_p2s, iy_p2s, iz_p2s, levels=contours_line, colors=color_exp, linestyles=[(0, (1,5))],linewidths = 2, zorder=2)
-        contour_p2s.collections[0].set_label(r'95% Expected')
+        contour_p2s.collections[0].set_label(r'95% expected')
         contour_m2s = plt.contour(ix_m2s, iy_m2s, iz_m2s, levels=contours_line, colors=color_exp, linestyles=[(0, (1,5))],linewidths = 2, zorder=2)
 
         contour_obs = plt.contour(ix_obs, iy_obs, iz_obs, levels=contours_line, colors=color_obs, linestyles="solid",linewidths = 4, zorder=2)
@@ -388,7 +388,9 @@ def plot_2d(df, tag):
             plt.text(2400,600,"$\Omega h^2$ = 0.12", color="gray", rotation=30)
         
         
-        labels = hep.cms.label(data=True, year='2016-2018', lumi=137)
+        # labels = hep.cms.label(data=True, year='2016-2018', lumi=137)
+        plt.text(100,600,"CMS", fontweight='bold', ha='left',va='bottom',fontsize=30)
+        labels = hep.cms.label_base.exp_label(exp="",data=True, year='2016-2018', lumi=137)
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_contour.{ext}"))
 
@@ -503,7 +505,7 @@ def plot_dd(df, tag):
         mmed=mmed[mask]
         mdm=mdm[mask]
         xs = contour_to_dd(mmed, mdm, coupling)
-        plt.plot(mdm, xs,'-', color='crimson', lw=3, label=f'{coupling.capitalize()} mediator, Dirac DM\n$g_{{q}}$=0.25, $g_{{DM}}$=1.0')
+        plt.plot(mdm, xs,'-', color='crimson', lw=3, label=f'{coupling.capitalize()} mediator, Dirac DM\n$g_{{q}}$ = 0.25, $g_{{DM}}$ = 1.0')
         plt.yscale("log")
         plt.xscale("log")
         plt.ylim(1e-47,1e-35)
@@ -600,15 +602,15 @@ def main():
     df.m2s = 0.01 * df.m2s
 
     # Vanilla plots
-    df95 = df[df.cl==0.95]
-    plot_2d(df95,tag=tag)
+    # df95 = df[df.cl==0.95]
+    # plot_2d(df95,tag=tag)
     # # plot_1d(df95, tag)
 
     # Coupling plot
-    dfs = []
-    for cp in ['gq','gchi']:
-        for correct in True, False:
-            dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
+    # dfs = []
+    # for cp in ['gq','gchi']:
+    #     for correct in True, False:
+    #         dfs.extend(plot_coupling(df95, tag=tag,coupling_type=cp, correct_mdm=correct))
 
     # dfout = pd.concat(dfs)
     # dfout.to_pickle(
@@ -616,7 +618,7 @@ def main():
     # )
 
 
-    # df90 = df[df.cl==0.90]
-    # plot_dd(df90, tag=tag)
+    df90 = df[df.cl==0.90]
+    plot_dd(df90, tag=tag)
 if __name__ == "__main__":
     main()

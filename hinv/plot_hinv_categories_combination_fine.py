@@ -6,7 +6,7 @@ import uproot
 from dataclasses import dataclass
 import matplotlib
 plt.style.use(hep.style.CMS)
-
+matplotlib.rcParams['mathtext.cal']='Palatino'
 @dataclass
 class Channel:
     file: str
@@ -108,7 +108,7 @@ for i, channel in enumerate(channels):
         2*[channel.m2s],
         color=colors['2s'],
         zorder=-5,
-        label=r'95% Expected' if i==0 else None
+        label=r'95% expected' if i==0 else None
     )
 
     plt.fill_between(
@@ -117,12 +117,13 @@ for i, channel in enumerate(channels):
         2*[channel.m1s],
         color=colors['1s'],
         zorder=-4,
-        label=r'68% Expected' if i==0 else None
+        label=r'68% expected' if i==0 else None
     )
 
-    plt.plot(
+    eb = plt.errorbar(
         i,
         channel.exp,
+        xerr=0.5,
         marker='o',
         fillstyle='none',
         markersize=8,
@@ -130,6 +131,7 @@ for i, channel in enumerate(channels):
         ls='none',
         label='Median expected' if i==0 else None
     )
+    eb[-1][0].set_linestyle('--')
     plt.errorbar(
         i,
         channel.obs,
@@ -144,7 +146,7 @@ for i, channel in enumerate(channels):
     
 plt.legend(loc=(0.,0.7), ncol=2)
 plt.text(8.3,0.1,'95% CL upper limits',ha="right")
-plt.ylabel(r"BR(H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
+plt.ylabel(r"$\mathcal{B}$ (H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels],rotation=90)
 plt.ylim(0,2)
 plt.xlim(-0.5,8.5)
