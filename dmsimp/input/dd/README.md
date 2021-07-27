@@ -1,4 +1,4 @@
-# Direct detection refrence limits
+# Direct detection reference limits
 
 Last updated July 27th, 2021.
 
