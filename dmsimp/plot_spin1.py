@@ -13,6 +13,7 @@ from limitlib import (brazilgreen, brazilyellow, find_intersection,
 from mediator_width import *
 from dmsimp_lib import *
 from dmcontour import DMInterp
+import pickle
 pjoin = os.path.join
 plt.style.use(hep.style.CMS)
 
@@ -296,12 +297,44 @@ def plot_2d(df, tag):
         plt.gcf().clf()
 
         idf = df[df.coupling==coupling]
-        dmc = DMInterp(idf)
-        dmc_p1s = DMInterp(idf, quantile='p1s')
-        dmc_m1s = DMInterp(idf, quantile='m1s')
-        dmc_p2s = DMInterp(idf, quantile='p2s')
-        dmc_m2s = DMInterp(idf, quantile='m2s')
-        dmc_obs = DMInterp(idf, quantile='obs')
+
+        cache = pjoin(outdir, 'dminterp_cache.pkl')
+        grids = None
+        if os.path.exists(cache):
+            try:
+                print(f"Loading cache: {cache}")
+                with open(cache, "rb") as f:
+                    grids = pickle.load(f)
+            except EOFError:
+                print("Cache load failed. Recalculating.")
+                pass
+
+        if grids is None:
+            dmc = DMInterp(idf)
+            dmc_p1s = DMInterp(idf, quantile='p1s')
+            dmc_m1s = DMInterp(idf, quantile='m1s')
+            dmc_p2s = DMInterp(idf, quantile='p2s')
+            dmc_m2s = DMInterp(idf, quantile='m2s')
+            dmc_obs = DMInterp(idf, quantile='obs')
+
+            grids = {
+                "exp" : dmc.grid,
+                "p1s" : dmc_p1s.grid,
+                "p2s" : dmc_p2s.grid,
+                "m1s" : dmc_m1s.grid,
+                "m2s" : dmc_m2s.grid,
+                "obs" : dmc_obs.grid
+            }
+            with open(cache, "wb") as f:
+                pickle.dump(grids,f)
+
+        ix,iy,iz             = grids['exp']
+        ix_p1s,iy_p1s,iz_p1s = grids['p1s']
+        ix_m1s,iy_m1s,iz_m1s = grids['m1s']
+        ix_p2s,iy_p2s,iz_p2s = grids['p2s']
+        ix_m2s,iy_m2s,iz_m2s = grids['m2s']
+        ix_obs,iy_obs,iz_obs = grids['obs']
+
 
         logz = True
         if(logz):
@@ -311,12 +344,6 @@ def plot_2d(df, tag):
             contours_filled = [np.log10(0.1 * x) for x in range(1,50)]
             contours_line = [1]
 
-        ix,iy,iz = dmc.grid
-        ix_p1s,iy_p1s,iz_p1s = dmc_p1s.grid
-        ix_m1s,iy_m1s,iz_m1s = dmc_m1s.grid
-        ix_p2s,iy_p2s,iz_p2s = dmc_p2s.grid
-        ix_m2s,iy_m2s,iz_m2s = dmc_m2s.grid
-        ix_obs,iy_obs,iz_obs = dmc_obs.grid
         if logz:
             iz = np.log10(iz)
             iz_p1s = np.log10(iz_p1s)
@@ -336,16 +363,16 @@ def plot_2d(df, tag):
         iz_obs[iz_obs<min(contours_filled)] = min(contours_filled)
         iz_obs[iz_obs>max(contours_filled)] = max(contours_filled)
 
-        CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap,zorder=-5,alpha=0.85)
+        CF = plt.contourf(ix_obs, iy_obs, iz_obs, levels=contours_filled, cmap=cmap,zorder=-5)
         for c in CF.collections:
             c.set_edgecolor("none")
         cb = plt.colorbar()
 
-        color_obs = 'blue'
-        color_exp = 'navy'
+        color_obs = 'k'
+        color_exp = 'k'
 
         contours = {}
-        contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color_exp, linestyles=[(0, (5,1))],linewidths = 2, zorder=2)
+        contour_exp = plt.contour(ix, iy, iz, levels=contours_line, colors=color_exp, linestyles=[(0, (5,1))],linewidths = 3, zorder=2)
         contour_exp.collections[0].set_label('Median expected')
         contour_p1s = plt.contour(ix_p1s, iy_p1s, iz_p1s, levels=contours_line, colors=color_exp, linestyles=[(0, (3,3))],linewidths = 2, zorder=2)
         contour_p1s.collections[0].set_label(r'68% expected')
@@ -372,7 +399,7 @@ def plot_2d(df, tag):
         #     '$g_{q} = 0.25, g_{\chi} = 1.0$'
         # ])
         # )
-        draw_2016(coupling)
+        # draw_2016(coupling)
 
         plt.legend(loc='upper left', title= '\n'.join([
             f'{coupling.capitalize()} mediator',
@@ -527,6 +554,10 @@ def plot_dd(df, tag):
         else:
             plt.legend(ncol=2)
 
+        labels = hep.cms.label(data=True, label='', lumi=137)
+        for ext in 'pdf','png':
+            plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd.{ext}"))
+
         labels = hep.cms.label(data=True, label='Supplementary', lumi=137)
         for ext in 'pdf','png':
             plt.gcf().savefig(pjoin(outdir, f"{coupling}_dd_supplementary.{ext}"))
@@ -602,8 +633,8 @@ def main():
     df.m2s = 0.01 * df.m2s
 
     # Vanilla plots
-    # df95 = df[df.cl==0.95]
-    # plot_2d(df95,tag=tag)
+    df95 = df[df.cl==0.95]
+    plot_2d(df95,tag=tag)
     # # plot_1d(df95, tag)
 
     # Coupling plot
@@ -618,7 +649,7 @@ def main():
     # )
 
 
-    df90 = df[df.cl==0.90]
-    plot_dd(df90, tag=tag)
+    # df90 = df[df.cl==0.90]
+    # plot_dd(df90, tag=tag)
 if __name__ == "__main__":
     main()

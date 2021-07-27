@@ -144,7 +144,7 @@ def plot_1d(limits, tag):
 
     text = [
             f'Scalar first-generation leptoquark',
-            r'$\beta$ = 1 - BR(LQ$\rightarrow$u$\nu_{e}$) = 0'
+            r'$\mathcal{B}$ (LQ $\rightarrow$ u$\nu_e$) = 1  ($\beta = 0$)'
         ]
     plt.text(2000,0.27,
         '\n'.join(text),

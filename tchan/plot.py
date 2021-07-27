@@ -186,6 +186,8 @@ def plot2d(df, tag):
     exp = df['exp']
     p1s = df['p1s']
     m1s = df['m1s']
+    p2s = df['p2s']
+    m2s = df['m2s']
     obs = df['obs']
 
     mask = ~((x==1600) & (y==650))
@@ -195,6 +197,8 @@ def plot2d(df, tag):
     obs = obs[mask]
     p1s = p1s[mask]
     m1s = m1s[mask]
+    p2s = p2s[mask]
+    m2s = m2s[mask]
 
     contours_filled = np.log10(np.logspace(-1,1,7))
     contours_line = [0]
@@ -214,34 +218,50 @@ def plot2d(df, tag):
     for c in CF.collections:
         c.set_edgecolor("face")
 
-    args = dict(colors='black',linewidths=3,zorder=2,levels=contours_line,)
+    args = dict(colors='black',zorder=2,levels=contours_line)
     cs_exp = plt.contour(
                        ix, iy, iz,
-                       linestyles="--",
+                       linestyles=[(0, (5,1))],
+                       linewidths=3,
                        **args)
     cs_exp.collections[0].set_label('Median expected')
 
     cs_obs = plt.contour(
                        *get_x_y_z(x,y,obs),
                        linestyles="solid",
+                       linewidths=4,
                        **args)
     cs_obs.collections[0].set_label('Observed')
 
     cs_p1s=plt.contour(
                 *get_x_y_z(x,y,p1s),
-                linestyles=":",
+                linestyles=[(0, (3,3))],
+                linewidths=2,
                 **args)
     cs_p1s.collections[0].set_label(r'68% expected')
     cs_m1s = plt.contour(
                 *get_x_y_z(x,y,m1s),
-                linestyles=":",
+                linestyles=[(0, (3,3))],
+                linewidths=2,
+                **args)
+    
+    cs_p2s=plt.contour(
+                *get_x_y_z(x,y,p2s),
+                linestyles=[(0, (1,5))],
+                linewidths=2,
+                **args)
+    cs_p2s.collections[0].set_label(r'95% expected')
+    cs_m1s = plt.contour(
+                *get_x_y_z(x,y,m2s),
+                linestyles=[(0, (1,5))],
+                linewidths=2,
                 **args)
     cb.add_lines(cs_obs)
     cb.set_label("95% CL observed upper limit on $\log_{10}(\mu)$")
     plt.clim([1e-1,1e1])
 
     # plt.plot(x,y, marker='+',color='k', ls='none')
-    plt.plot(x16_obs,y16_obs,color='gold', label="2016 (36 fb$^{-1}$)", lw=3,zorder=1,ls='-')
+    # plt.plot(x16_obs,y16_obs,color='gold', label="2016 (36 fb$^{-1}$)", lw=3,zorder=1,ls='-')
     # plt.plot(x16_exp,y16_exp,color='gold', lw=3,zorder=1,ls='--')
 
 

@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import uproot
 from dataclasses import dataclass
 import matplotlib
+from matplotlib.legend_handler import HandlerErrorbar
 plt.style.use(hep.style.CMS)
 matplotlib.rcParams['mathtext.cal']='Palatino'
 @dataclass
@@ -144,7 +145,7 @@ for i, channel in enumerate(channels):
         label='Observed' if i==0 else None
     )
     
-plt.legend(loc=(0.,0.7), ncol=2)
+plt.legend(loc=(0.,0.7), ncol=2,handler_map={type(eb): HandlerErrorbar(xerr_size=0.75)})
 plt.text(8.3,0.1,'95% CL upper limits',ha="right")
 plt.ylabel(r"$\mathcal{B}$ (H$\rightarrow$ inv) = $\sigma_{obs}$ / $\sigma_{SM}(H)$")
 plt.xticks(range(len(channels)), [channel.xlabel for channel in channels],rotation=90)
